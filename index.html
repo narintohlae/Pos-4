@@ -482,30 +482,29 @@
                 </div>
             </section>
     
-            <!-- Summary Section -->
+            <!-- History and Summary Section -->
             <section class="card">
-                 <h2 id="summary-title">สรุปยอดขาย</h2>
-                 <div class="summary-grid">
-                     <div class="summary-item">
-                         <div class="label">ยอดขายรวม</div>
-                         <div class="value" id="summary-total-sales">0.00</div>
-                     </div>
-                     <div class="summary-item">
-                         <div class="label">ส่วนลดรวม</div>
-                         <div class="value" id="summary-total-discount" style="color: var(--warning-color);">0.00</div>
-                     </div>
-                     <div class="summary-item">
-                         <div class="label">ยอดขายสุทธิ</div>
-                         <div class="value" id="summary-net-sales" style="color: var(--success-color);">0.00</div>
-                     </div>
-                     <div class="summary-item">
-                         <div class="label">จำนวนบิล</div>
-                         <div class="value" id="summary-bill-count">0</div>
-                     </div>
-                 </div>
+                <h2 id="summary-title">สรุปยอดขาย</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <div class="label">ยอดขายรวม</div>
+                        <div class="value" id="summary-total-sales">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">ส่วนลดรวม</div>
+                        <div class="value" id="summary-total-discount" style="color: var(--warning-color);">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">ยอดขายสุทธิ</div>
+                        <div class="value" id="summary-net-sales" style="color: var(--success-color);">0.00</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="label">จำนวนบิล</div>
+                        <div class="value" id="summary-bill-count">0</div>
+                    </div>
+                </div>
             </section>
 
-            <!-- History Section -->
             <section class="card">
                 <h2>ประวัติการขาย</h2>
     
@@ -516,11 +515,11 @@
                     <label for="end-date">ถึงวันที่:</label>
                     <input type="date" id="end-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
                     <button id="filter-history-btn" style="flex-grow: 0;">ค้นหา</button>
-                    <button id="view-all-history-btn" style="flex-grow: 0; background-color: var(--secondary-color);">ดูทั้งหมด</button>
                 </div>
     
                 <div class="button-group" style="justify-content: flex-start; margin-bottom: 1rem;">
-                    <button id="export-csv-btn" style="flex-grow: 0;">Export to CSV</button>
+                    <button id="my-history-btn" style="flex-grow: 0; background-color: var(--secondary-color);">ประวัติของฉัน</button>
+                    <button id="all-history-btn" style="flex-grow: 0; background-color: var(--warning-color);">ประวัติทั้งหมด (แอดมิน)</button>
                     <button id="export-excel-btn" style="flex-grow: 0;">Export to Excel</button>
                     <button id="clear-all-history-btn" class="clear-cart" style="flex-grow: 0; margin-left: auto;">ล้างประวัติทั้งหมด</button>
                 </div>
@@ -605,7 +604,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
@@ -628,7 +627,7 @@
             window.appId = "pos2-67ef6"; // Use project ID as app ID
             window.firebase = {
                 auth,
-                collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc
+                collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc, collectionGroup
             };
 
             // Sign in anonymously to get permissions for Firestore
@@ -749,8 +748,8 @@
         document.querySelector('.clear-cart').addEventListener('click', clearCart);
         
         document.getElementById('filter-history-btn').addEventListener('click', filterHistoryByDate);
-        document.getElementById('view-all-history-btn').addEventListener('click', () => loadSalesHistoryFromFirestore());
-        document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+        document.getElementById('my-history-btn').addEventListener('click', () => loadSalesHistoryFromFirestore());
+        document.getElementById('all-history-btn').addEventListener('click', loadAllSalesHistory);
         document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
         document.getElementById('clear-all-history-btn').addEventListener('click', showClearOptionsModal);
         
@@ -1214,7 +1213,8 @@
             discount: discount,
             total: finalTotal,
             cashReceived: cashReceived,
-            change: cashReceived - finalTotal
+            change: cashReceived - finalTotal,
+            user: window.userId // Add user to the record
         };
         
         try {
@@ -1407,11 +1407,13 @@
         
         let q;
         if (startDate && endDate) {
+            document.getElementById('summary-title').textContent = `สรุปยอดขายของ ${window.userId} (ตามช่วงเวลา)`;
             q = query(historyCollectionRef, 
                 where("timestamp", ">=", startDate), 
                 where("timestamp", "<=", endDate)
             );
         } else {
+             document.getElementById('summary-title').textContent = `สรุปยอดขายของ ${window.userId}`;
             q = query(historyCollectionRef);
         }
 
@@ -1432,33 +1434,49 @@
             }
         });
     }
+    
+    function loadAllSalesHistory() {
+        if (unsubscribeSalesHistory) {
+            unsubscribeSalesHistory();
+        }
+        
+        // This is a collection group query. It queries all collections named 'salesHistory'.
+        // IMPORTANT: This requires a composite index in Firestore. 
+        // The console will provide a link to create it automatically when this query fails for the first time.
+        const salesCollectionGroup = window.firebase.collectionGroup(window.db, 'salesHistory');
+        document.getElementById('summary-title').textContent = 'สรุปยอดขายทั้งหมด';
+
+        unsubscribeSalesHistory = window.firebase.onSnapshot(salesCollectionGroup, (querySnapshot) => {
+            const newHistory = [];
+            querySnapshot.forEach((doc) => {
+                newHistory.push({ ...doc.data(), firestoreId: doc.id });
+            });
+            salesHistory = newHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            updateHistoryDisplay();
+            calculateSummaryForDisplayedHistory();
+        }, (error) => {
+            console.error("Error loading all sales history:", error);
+             if (error.code === 'failed-precondition') {
+                showInfoModal("ข้อผิดพลาด Firestore (Admin)", "การดึงข้อมูลทั้งหมดต้องการ Index พิเศษ\n\nวิธีแก้ไข (สำหรับนักพัฒนา):\n1. ดูที่ Console Log ของเบราว์เซอร์\n2. Firestore จะมีลิงก์สำหรับสร้าง Index ของ Collection Group 'salesHistory' โดยอัตโนมัติ\n3. คลิกลิงก์นั้นเพื่อสร้าง Index แล้วลองอีกครั้ง", true);
+            } else {
+                 showInfoModal("ข้อผิดพลาด", "ไม่สามารถดึงข้อมูลประวัติการขายทั้งหมดได้", true);
+            }
+        });
+    }
 
     // --- DAILY SUMMARY ---
     function calculateSummaryForDisplayedHistory() {
-        const summaryTitle = document.getElementById('summary-title');
         const displayedSales = salesHistory; 
         
-        const totalSales = displayedSales.reduce((sum, sale) => sum + sale.subtotal, 0);
-        const totalDiscount = displayedSales.reduce((sum, sale) => sum + sale.discount, 0);
-        const netSales = displayedSales.reduce((sum, sale) => sum + sale.total, 0);
+        const totalSales = displayedSales.reduce((sum, sale) => sum + (sale.subtotal || 0), 0);
+        const totalDiscount = displayedSales.reduce((sum, sale) => sum + (sale.discount || 0), 0);
+        const netSales = displayedSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
         const billCount = displayedSales.length;
 
         document.getElementById('summary-total-sales').textContent = totalSales.toFixed(2);
         document.getElementById('summary-total-discount').textContent = totalDiscount.toFixed(2);
         document.getElementById('summary-net-sales').textContent = netSales.toFixed(2);
         document.getElementById('summary-bill-count').textContent = billCount;
-
-        const startDateInput = document.getElementById('start-date').value;
-        const endDateInput = document.getElementById('end-date').value;
-        const isFiltered = !!(startDateInput && endDateInput && unsubscribeSalesHistory);
-
-        if (isFiltered) {
-            const start = new Date(startDateInput).toLocaleDateString('th-TH');
-            const end = new Date(endDateInput).toLocaleDateString('th-TH');
-            summaryTitle.textContent = `สรุปยอดขาย (${start} - ${end})`;
-        } else {
-            summaryTitle.textContent = 'สรุปยอดขายทั้งหมด';
-        }
     }
     
     async function generateSaleId() {
@@ -1498,26 +1516,12 @@
                 'หน่วย': item['หน่วย'], 
                 'จำนวน': item.quantity,
                 'ราคาต่อหน่วย': parseFloat(item['ราคา']), 
-                'ราคารวม (รายการนี้)': item['ราคา'] * item.quantity
+                'ราคารวม (รายการนี้)': item['ราคา'] * item.quantity,
+                'ผู้ใช้': sale.user || '' // Include user if available
             }))
         );
     }
-    function exportToCSV() {
-        const dataToExport = getHistoryForExport();
-        if (dataToExport.length === 0) {
-            showInfoModal("ไม่มีข้อมูล", "ไม่มีข้อมูลประวัติการขายให้ Export", false);
-            return;
-        }
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob(['\uFEFF' + csvOutput], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `pos-history-${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+
     function exportToExcel() {
         const dataToExport = getHistoryForExport();
         if (dataToExport.length === 0) {
@@ -1527,7 +1531,7 @@
         const worksheet = XLSX.utils.json_to_sheet(dataToExport);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, 'ประวัติการขาย');
-        worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15} ];
+        worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15}, {wch:15} ];
         XLSX.writeFile(workbook, `pos-history-${new Date().toISOString().split('T')[0]}.xlsx`);
     }
 
