@@ -761,7 +761,15 @@
     function setupEventListeners() {
         document.getElementById('barcode-input').addEventListener('input', handleInstantSearch);
         document.getElementById('barcode-input').addEventListener('keydown', handleSearchKeyDown);
+        
         document.getElementById('discount-input').addEventListener('input', updateCartOnInput);
+        document.getElementById('discount-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                showPaymentModal();
+            }
+        });
+
         document.querySelector('.finish-sale').addEventListener('click', showPaymentModal);
         document.querySelector('.clear-cart').addEventListener('click', clearCart);
         
@@ -772,6 +780,13 @@
         document.getElementById('clear-all-history-btn').addEventListener('click', showClearOptionsModal);
         
         document.getElementById('cash-received-input').addEventListener('input', calculateChange);
+        document.getElementById('cash-received-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                calculateChange();
+                document.getElementById('confirm-sale-btn').focus();
+            }
+        });
         document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
         document.getElementById('cancel-payment-btn').addEventListener('click', hidePaymentModal);
         
