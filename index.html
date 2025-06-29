@@ -192,7 +192,7 @@
 
         .cart-header-row {
             display: grid;
-            grid-template-columns: 30px 1fr 120px 120px 100px 40px;
+            grid-template-columns: 30px 1fr 90px 90px 100px 40px;
             gap: 1rem;
             padding: 0 0.75rem 0.5rem 0.75rem;
             font-weight: bold;
@@ -216,7 +216,7 @@
             background-color: #f1f3f5; padding: 0.75rem; border-radius: 4px;
             margin-bottom: 0.5rem; 
             display: grid;
-            grid-template-columns: 30px 1fr 120px 120px 100px 40px;
+            grid-template-columns: 30px 1fr 90px 90px 100px 40px;
             align-items: center; 
             gap: 1rem;
         }
@@ -224,11 +224,12 @@
         .item-input {
             text-align: right;
             border: 1px solid var(--border-color);
-            border-radius: 0;
-            padding: 2px 5px;
-            font-size: 0.9em;
+            border-radius: 4px;
+            padding: 5px;
+            font-size: 1em;
             background-color: var(--white-color);
             width: 100%;
+            box-sizing: border-box;
             -moz-appearance: textfield;
         }
         .item-input::-webkit-outer-spin-button,
@@ -237,41 +238,15 @@
           margin: 0;
         }
 
-        .input-stepper {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .stepper-btn {
-            width: 28px;
-            height: 28px;
-            padding: 0;
-            font-size: 1.2em;
-            line-height: 28px;
-            flex-shrink: 0;
-            border: 1px solid var(--border-color);
-            background-color: #fff;
-            color: var(--dark-text);
-        }
-        .stepper-btn:first-child { border-radius: 4px 0 0 4px; }
-        .stepper-btn:last-child { border-radius: 0 4px 4px 0; }
-        .stepper-btn:hover { background-color: #f1f3f5; }
-        .input-stepper input {
-            border-left: none;
-            border-right: none;
-            text-align: center;
-        }
-
-        
         .delete-item-btn {
             background-color: var(--danger-color);
             color: white;
             border: none;
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             border-radius: 50%;
-            font-size: 1.5em;
-            line-height: 28px;
+            font-size: 1.2em;
+            line-height: 24px;
             cursor: pointer;
             padding: 0;
             flex-shrink: 0;
@@ -1115,18 +1090,10 @@
                 <div class="col-seq">${index + 1}.</div>
                 <div class="col-name"><strong>${item['สินค้า']}</strong></div>
                 <div class="col-qty">
-                    <div class="input-stepper">
-                        <button class="stepper-btn" onclick="editItemQuantity(${index}, ${item.quantity - 1})">-</button>
-                        <input type="number" class="item-input item-quantity-input" value="${item.quantity}" onchange="editItemQuantity(${index}, this.value)" onfocus="this.select()">
-                        <button class="stepper-btn" onclick="editItemQuantity(${index}, ${item.quantity + 1})">+</button>
-                    </div>
+                    <input type="number" class="item-input item-quantity-input" value="${item.quantity}" onchange="editItemQuantity(${index}, this.value)" onfocus="this.select()" style="text-align: center;">
                 </div>
                 <div class="col-price col-right">
-                     <div class="input-stepper">
-                        <button class="stepper-btn" onclick="editItemPrice(${index}, ${item['ราคา'] - 1})">-</button>
-                        <input type="number" class="item-input" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="editItemPrice(${index}, this.value)" onfocus="this.select()">
-                        <button class="stepper-btn" onclick="editItemPrice(${index}, ${item['ราคา'] + 1})">+</button>
-                    </div>
+                     <input type="number" class="item-input" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="editItemPrice(${index}, this.value)" onfocus="this.select()">
                 </div>
                 <div class="col-total col-right">${((item['ราคา'] || 0) * item.quantity).toFixed(2)}</div>
                 <div class="col-delete col-center">
