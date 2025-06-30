@@ -192,7 +192,7 @@
 
         .cart-header-row {
             display: grid;
-            grid-template-columns: 30px 1fr 90px 90px 100px 40px;
+            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
             gap: 1rem;
             padding: 0 0.75rem 0.5rem 0.75rem;
             font-weight: bold;
@@ -216,7 +216,7 @@
             background-color: #f1f3f5; padding: 0.75rem; border-radius: 4px;
             margin-bottom: 0.5rem; 
             display: grid;
-            grid-template-columns: 30px 1fr 90px 90px 100px 40px;
+            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
             align-items: center; 
             gap: 1rem;
         }
@@ -236,6 +236,16 @@
         .item-input::-webkit-inner-spin-button {
           -webkit-appearance: none;
           margin: 0;
+        }
+        
+        .col-qty {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+         .col-qty .item-input {
+            width: 55px;
+            text-align: center;
         }
 
         .delete-item-btn {
@@ -1067,6 +1077,18 @@
         updateCartDisplay();
     }
     
+    function editItemTotalPrice(index, newTotalString) {
+        const cart = getActiveCart();
+        const newTotal = parseFloat(newTotalString);
+        if (!isNaN(newTotal) && newTotal >= 0) {
+            const item = cart[index];
+            if (item && item.quantity > 0) {
+                item['ราคา'] = newTotal / item.quantity;
+            }
+        }
+        updateCartDisplay();
+    }
+
     function updateCartDisplay() {
         const cart = getActiveCart();
         const discount = getActiveDiscount();
@@ -1089,12 +1111,15 @@
                 <div class="col-seq">${index + 1}.</div>
                 <div class="col-name"><strong>${item['สินค้า']}</strong></div>
                 <div class="col-qty">
-                    <input type="number" class="item-input item-quantity-input" value="${item.quantity}" onchange="editItemQuantity(${index}, this.value)" onfocus="this.select()" style="text-align: center;">
+                    <input type="number" class="item-input" value="${item.quantity}" onchange="editItemQuantity(${index}, this.value)" onfocus="this.select()">
+                    <span class="item-unit" style="font-size: 0.9em; white-space: nowrap;">${item['หน่วย'] || ''}</span>
                 </div>
                 <div class="col-price col-right">
                      <input type="number" class="item-input" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="editItemPrice(${index}, this.value)" onfocus="this.select()">
                 </div>
-                <div class="col-total col-right">${((item['ราคา'] || 0) * item.quantity).toFixed(2)}</div>
+                <div class="col-total col-right">
+                    <input type="number" class="item-input" value="${((item['ราคา'] || 0) * item.quantity).toFixed(2)}" onchange="editItemTotalPrice(${index}, this.value)" onfocus="this.select()">
+                </div>
                 <div class="col-delete col-center">
                     <button class="delete-item-btn" onclick="deleteItemFromCart(${index})">&times;</button>
                 </div>
