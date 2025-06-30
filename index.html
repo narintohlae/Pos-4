@@ -31,77 +31,9 @@
             color: var(--dark-text);
             margin: 0;
         }
-        
-        #login-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--white-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .login-card {
-            background-color: var(--white-color);
-            padding: 2.5rem;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .login-card h2 {
-            margin-bottom: 2rem;
-        }
-        .login-form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-        .login-form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-        .login-form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 1em;
-        }
-        #login-btn {
-            width: 100%;
-            padding: 0.8rem;
-            font-size: 1.1em;
-        }
 
         .body-content {
              padding: 1.5rem;
-        }
-
-        #logout-section {
-             display: none; /* Hidden by default */
-             background-color: var(--white-color);
-             padding: 0.5rem 1.5rem;
-             border-radius: 8px;
-             box-shadow: var(--shadow);
-             margin: 0 auto 1.5rem auto;
-             max-width: 1400px;
-             justify-content: space-between;
-             align-items: center;
-        }
-        #logout-section span {
-            font-weight: bold;
-            color: var(--dark-text);
-        }
-         #logout-section button {
-             background-color: var(--secondary-color);
-             padding: 0.5rem 1rem;
         }
 
         .main-container {
@@ -417,28 +349,7 @@
     </style>
 </head>
 <body>
-    
-    <div id="login-overlay">
-        <div class="login-card">
-            <h2>POS System Login</h2>
-            <div class="login-form-group">
-                <label for="username-input">ชื่อผู้ใช้</label>
-                <input type="text" id="username-input" placeholder="เช่น 001">
-            </div>
-            <div class="login-form-group">
-                <label for="password-input">รหัสผ่าน</label>
-                <input type="password" id="password-input" placeholder="••••••••">
-            </div>
-            <button id="login-btn">เข้าสู่ระบบ</button>
-        </div>
-    </div>
-
     <div class="body-content">
-        <div id="logout-section">
-            <span id="user-display"></span>
-            <button id="logout-btn">ออกจากระบบ</button>
-        </div>
-
         <main class="main-container">
             <!-- Sales Section Card -->
             <section class="card">
@@ -528,8 +439,6 @@
                 </div>
     
                 <div class="button-group" style="justify-content: flex-start; margin-bottom: 1rem;">
-                    <button id="my-history-btn" style="flex-grow: 0; background-color: var(--secondary-color);">ประวัติของฉัน</button>
-                    <button id="all-history-btn" style="flex-grow: 0; background-color: var(--warning-color);">ประวัติทั้งหมด (แอดมิน)</button>
                     <button id="export-excel-btn" style="flex-grow: 0;">Export to Excel</button>
                     <button id="clear-all-history-btn" class="clear-cart" style="flex-grow: 0; margin-left: auto;">ล้างประวัติทั้งหมด</button>
                 </div>
@@ -673,7 +582,6 @@
         // --- CONFIGURATION & STATE ---
         config: {
             googleSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTI3YprJH_ZZDF5A3ovmZwwByaMJ_wrZhPWoZjSkMqSxc3ouBlx6kDBRB_f7nY5D39AvvjR4V34JMVd/pub?gid=146829827&single=true&output=csv',
-            users: { "001": "narinqq", "002": "002" },
             thaiToEngMap: { 'ๅ': '1', '/': '2', '-': '3', 'ภ': '4', 'ถ': '5', 'ุ': '6', 'ึ': '7', 'ค': '8', 'ต': '9', 'จ': '0', 'ข': '-', 'ช': '=', 'ๆ': 'q', 'ไ': 'w', 'ำ': 'e', 'พ': 'r', 'ะ': 't', 'ั': 'y', 'ี': 'u', 'ร': 'i', 'น': 'o', 'ย': 'p', 'บ': '[', 'ล': ']', 'ฟ': 'a', 'ห': 's', 'ก': 'd', 'ด': 'f', 'เ': 'g', '้': 'h', '่': 'j', 'า': 'k', 'ส': 'l', 'ว': ';', 'ง': "'", 'ผ': 'z', 'ป': 'x', 'แ': 'c', 'อ': 'v', 'ิ': 'b', 'ท': 'n', 'ม': 'm', 'ใ': ',', 'ฝ': '.', 'ซ': '/' }
         },
         state: {
@@ -686,7 +594,6 @@
             activeModalCloseHandler: null,
             tabs: new Map(),
             activeTabId: null,
-            currentUser: null // The application-level user (e.g., '001')
         },
 
         // --- INITIALIZATION ---
@@ -705,38 +612,8 @@
         },
         
         start() {
-            document.getElementById('login-btn').addEventListener('click', () => this.handleLogin());
-            document.getElementById('logout-btn').addEventListener('click', () => this.handleLogout());
-            
-            const loggedInUser = sessionStorage.getItem('posUsername');
-            if (loggedInUser) {
-                this.showMainApp(loggedInUser);
-            } else {
-                this.showLoginScreen();
-            }
-        },
-
-        // --- UI VIEW CONTROLLERS ---
-        showLoginScreen() {
-            document.getElementById('login-overlay').style.display = 'flex';
-            document.querySelector('.body-content').style.display = 'none';
-        },
-
-        showMainApp(username) {
-            this.state.currentUser = username;
-            console.log("POS User logged in:", this.state.currentUser);
-
-            document.getElementById('login-overlay').style.display = 'none';
-            document.querySelector('.body-content').style.display = 'block';
-            document.getElementById('logout-section').style.display = 'flex';
-            document.getElementById('user-display').textContent = `ผู้ใช้: ${username}`;
-            
-            this.initializeAppLogic();
-        },
-
-        initializeAppLogic() {
             console.log("Initializing main application logic...");
-            this.clearDataOnLogout();
+            this.clearDataOnStart();
             this.loadSalesHistoryFromFirestore();
             if (this.state.tabs.size === 0) {
                 this.addNewSaleTab();
@@ -746,7 +623,7 @@
             document.getElementById('barcode-input').focus();
         },
         
-        clearDataOnLogout() {
+        clearDataOnStart() {
             this.state.salesHistory = [];
             this.state.tabs = new Map();
             this.state.activeTabId = null;
@@ -779,8 +656,6 @@
             document.querySelector('.clear-cart').addEventListener('click', this.clearCart.bind(this));
             
             document.getElementById('filter-history-btn').addEventListener('click', this.filterHistoryByDate.bind(this));
-            document.getElementById('my-history-btn').addEventListener('click', () => this.loadSalesHistoryFromFirestore());
-            document.getElementById('all-history-btn').addEventListener('click', this.loadAllSalesHistory.bind(this));
             document.getElementById('export-excel-btn').addEventListener('click', this.exportToExcel.bind(this));
             document.getElementById('clear-all-history-btn').addEventListener('click', this.showClearOptionsModal.bind(this));
             
@@ -806,45 +681,25 @@
             document.addEventListener('keydown', this.handleGlobalKeyDown.bind(this));
         },
         
-        // --- AUTH & USER MGMT ---
-        handleLogin() {
-            const username = document.getElementById('username-input').value.trim();
-            const password = document.getElementById('password-input').value.trim(); // Added .trim() to fix potential space issue
-            
-            if (this.config.users[username] && this.config.users[username] === password) {
-                sessionStorage.setItem('posUsername', username);
-                this.showMainApp(username);
-            } else {
-                this.showInfoModal("เข้าสู่ระบบไม่สำเร็จ", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", true);
-            }
-        },
-        
-        handleLogout() {
-            sessionStorage.removeItem('posUsername');
-            this.state.currentUser = null;
-            this.clearDataOnLogout();
-            this.showLoginScreen();
-        },
-
         // --- FIRESTORE HELPERS ---
         getSalesHistoryCollectionRef() {
-            const { currentUser } = this.state;
             const { appId, db, api } = window.firebaseServices;
-            if (!currentUser || !appId) {
-                console.error("User or App ID not available for Firestore query.");
+            if (!appId) {
+                console.error("App ID not available for Firestore query.");
                 return null;
             }
-            return api.collection(db, `artifacts/${appId}/users/${currentUser}/salesHistory`);
+            // All data is now stored in a public path
+            return api.collection(db, `artifacts/${appId}/public_data/salesHistory`);
         },
 
         getSalesHistoryDocRef(firestoreId) {
-            const { currentUser } = this.state;
             const { appId, db, api } = window.firebaseServices;
-            if (!currentUser || !appId || !firestoreId) {
-                console.error("User, App ID or Document ID not available for Firestore query.");
+            if (!appId || !firestoreId) {
+                console.error("App ID or Document ID not available for Firestore query.");
                 return null;
             }
-            return api.doc(db, `artifacts/${appId}/users/${currentUser}/salesHistory`, firestoreId);
+             // All data is now stored in a public path
+            return api.doc(db, `artifacts/${appId}/public_data/salesHistory`, firestoreId);
         },
         
         // --- MODAL & NOTIFICATION SYSTEM ---
@@ -1268,7 +1123,6 @@
                 total: finalTotal,
                 cashReceived: cashReceived,
                 change: cashReceived - finalTotal,
-                user: this.state.currentUser // Add user to the record
             };
             
             try {
@@ -1422,9 +1276,6 @@
             }
             if(clearHistoryBtn) clearHistoryBtn.disabled = false;
             
-            // Re-bind 'this' for onclick handlers
-            const self = this;
-
             this.state.salesHistory.forEach((sale) => {
                 const row = historyBody.insertRow();
                 const itemDetails = sale.items.map(item => `${item['สินค้า']} (x${item.quantity})`).join('<br>');
@@ -1463,14 +1314,13 @@
             const { query, where } = window.firebaseServices.api;
             
             let q;
+             document.getElementById('summary-title').textContent = `สรุปยอดขาย`;
             if (startDate && endDate) {
-                document.getElementById('summary-title').textContent = `สรุปยอดขายของ ${this.state.currentUser} (ตามช่วงเวลา)`;
                 q = query(historyCollectionRef, 
                     where("timestamp", ">=", startDate), 
                     where("timestamp", "<=", endDate)
                 );
             } else {
-                 document.getElementById('summary-title').textContent = `สรุปยอดขายของ ${this.state.currentUser}`;
                 q = query(historyCollectionRef);
             }
 
@@ -1492,35 +1342,6 @@
             });
         },
         
-        loadAllSalesHistory() {
-            if (this.state.unsubscribeSalesHistory) {
-                this.state.unsubscribeSalesHistory();
-            }
-            
-            // This is a collection group query. It queries all collections named 'salesHistory'.
-            // IMPORTANT: This requires a composite index in Firestore. 
-            // The console will provide a link to create it automatically when this query fails for the first time.
-            const salesCollectionGroup = window.firebaseServices.api.collectionGroup(window.firebaseServices.db, 'salesHistory');
-            document.getElementById('summary-title').textContent = 'สรุปยอดขายทั้งหมด';
-
-            this.state.unsubscribeSalesHistory = window.firebaseServices.api.onSnapshot(salesCollectionGroup, (querySnapshot) => {
-                const newHistory = [];
-                querySnapshot.forEach((doc) => {
-                    newHistory.push({ ...doc.data(), firestoreId: doc.id });
-                });
-                this.state.salesHistory = newHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                this.updateHistoryDisplay();
-                this.calculateSummaryForDisplayedHistory();
-            }, (error) => {
-                console.error("Error loading all sales history:", error);
-                 if (error.code === 'failed-precondition') {
-                    this.showInfoModal("ข้อผิดพลาด Firestore (Admin)", "การดึงข้อมูลทั้งหมดต้องการ Index พิเศษ\n\nวิธีแก้ไข (สำหรับนักพัฒนา):\n1. ดูที่ Console Log ของเบราว์เซอร์\n2. Firestore จะมีลิงก์สำหรับสร้าง Index ของ Collection Group 'salesHistory' โดยอัตโนมัติ\n3. คลิกลิงก์นั้นเพื่อสร้าง Index แล้วลองอีกครั้ง", true);
-                } else {
-                     this.showInfoModal("ข้อผิดพลาด", "ไม่สามารถดึงข้อมูลประวัติการขายทั้งหมดได้", true);
-                }
-            });
-        },
-
         // --- DAILY SUMMARY ---
         calculateSummaryForDisplayedHistory() {
             const displayedSales = this.state.salesHistory; 
@@ -1573,8 +1394,7 @@
                     'หน่วย': item['หน่วย'], 
                     'จำนวน': item.quantity,
                     'ราคาต่อหน่วย': parseFloat(item['ราคา']), 
-                    'ราคารวม (รายการนี้)': item['ราคา'] * item.quantity,
-                    'ผู้ใช้': sale.user || '' // Include user if available
+                    'ราคารวม (รายการนี้)': item['ราคา'] * item.quantity
                 }))
             );
         },
@@ -1588,7 +1408,7 @@
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'ประวัติการขาย');
-            worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15}, {wch:15} ];
+            worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15} ];
             XLSX.writeFile(workbook, `pos-history-${new Date().toISOString().split('T')[0]}.xlsx`);
         },
 
