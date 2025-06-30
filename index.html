@@ -3,1663 +3,616 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบขายหน้าร้าน (POS)</title>
+    <title>เว็บแอปเบิกสินค้า</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Papaparse for robust CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- html2canvas for saving element as image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- SortableJS for smooth drag and drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary-color: #007bff;
-            --secondary-color: #6c757d;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --info-color: #17a2b8;
-            --warning-color: #ffc107;
-            --light-bg: #f8f9fa;
-            --white-color: #ffffff;
-            --dark-text: #343a40;
-            --border-color: #dee2e6;
-            --shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        body {
-            font-family: 'Sarabun', sans-serif;
-            background-color: var(--light-bg);
-            color: var(--dark-text);
-            margin: 0;
-        }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid #3b82f6; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 2rem auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        table thead { position: sticky; top: 0; z-index: 10; background-color: #f1f5f9; }
+        #cart-sidebar, #confirmation-modal { transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out; }
+        .modal-content, .page-content { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .cart-table th, .cart-table td { padding: 8px 4px; text-align: left; vertical-align: middle; }
         
-        #login-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: var(--white-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 2000;
-        }
-
-        .login-card {
-            background-color: var(--white-color);
-            padding: 2.5rem;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .login-card h2 {
-            margin-bottom: 2rem;
-        }
-        .login-form-group {
-            margin-bottom: 1.5rem;
-            text-align: left;
-        }
-        .login-form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
-        }
-        .login-form-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 1em;
-        }
-        #login-btn {
-            width: 100%;
-            padding: 0.8rem;
-            font-size: 1.1em;
-        }
-
-        .body-content {
-             padding: 1.5rem;
-        }
-
-        #logout-section {
-             display: none; /* Hidden by default */
-             background-color: var(--white-color);
-             padding: 0.5rem 1.5rem;
-             border-radius: 8px;
-             box-shadow: var(--shadow);
-             margin: 0 auto 1.5rem auto;
-             max-width: 1400px;
-             justify-content: space-between;
-             align-items: center;
-        }
-        #logout-section span {
-            font-weight: bold;
-            color: var(--dark-text);
-        }
-         #logout-section button {
-            background-color: var(--secondary-color);
-            padding: 0.5rem 1rem;
-         }
-
-        .main-container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-            max-width: 1400px;
-            margin: auto;
-        }
-
-        .card {
-            background-color: var(--white-color);
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: var(--shadow);
-            display: flex;
-            flex-direction: column;
-        }
-
-        h2, h3 {
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--primary-color);
-            padding-bottom: 0.5rem;
-            margin-top: 0;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            text-align: center;
-        }
-        .summary-item {
-            background-color: #f1f3f5;
-            padding: 1rem;
-            border-radius: 8px;
-        }
-        .summary-item .label {
-            font-size: 1em;
-            color: var(--secondary-color);
-        }
-        .summary-item .value {
-            font-size: 2em;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-
-        .pos-layout {
-            display: grid;
-            grid-template-columns: 1fr 3fr; /* 25% / 75% ratio */
-            gap: 1.5rem;
-        }
-        
-        .search-column, .cart-column {
-            display: flex;
-            flex-direction: column;
-        }
-
-        #barcode-input {
-            width: 100%; padding: 0.75rem; font-size: 1.1em;
-            box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px;
-            transition: border-color 0.3s, box-shadow 0.3s;
-        }
-        
-        #barcode-input:focus {
-            outline: none; border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-        }
-
-        #search-results {
-            margin-top: 1rem;
-            overflow-y: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            flex-grow: 1; 
-            min-height: 150px;
-        }
-        
-        .search-item {
-            padding: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border-color);
-            display: flex; justify-content: space-between;
-        }
-        .search-item:last-child { border-bottom: none; }
-        .search-item:hover, .search-item.selected {
-            background-color: var(--primary-color); color: var(--white-color);
-        }
-        .search-item.selected .price { color: var(--white-color); }
-
-        .cart-header-row {
-            display: grid;
-            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
-            gap: 1rem;
-            padding: 0 0.75rem 0.5rem 0.75rem;
-            font-weight: bold;
-            color: var(--secondary-color);
-            border-bottom: 2px solid var(--border-color);
-            align-items: center;
-        }
-        
-        .cart-header-row .col-name { text-align: left; }
-        .cart-header-row .col-center { text-align: center; }
-        .cart-header-row .col-right { text-align: right; }
-        
-        #cart-items {
-            list-style-type: none; padding: 0; 
-            overflow-y: auto; min-height: 300px;
-            margin-top: 0.5rem;
-            flex-grow: 1;
-        }
-
-        #cart-items li {
-            background-color: #f1f3f5; padding: 0.75rem; border-radius: 4px;
-            margin-bottom: 0.5rem; 
-            display: grid;
-            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
-            align-items: center; 
-            gap: 1rem;
-        }
-        
-        .item-input {
-            text-align: right;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 5px;
-            font-size: 1em;
-            background-color: var(--white-color);
-            width: 100%;
-            box-sizing: border-box;
-            -moz-appearance: textfield;
-        }
-        .item-input::-webkit-outer-spin-button,
-        .item-input::-webkit-inner-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-        
-        .col-qty {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-         .col-qty .item-input {
-            width: 55px;
-            text-align: center;
-        }
-
-        .delete-item-btn {
-            background-color: var(--danger-color);
-            color: white;
-            border: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            font-size: 1.2em;
-            line-height: 24px;
-            cursor: pointer;
-            padding: 0;
-            flex-shrink: 0;
-            margin: 0 auto;
-        }
-
-        .totals-section {
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
-            margin-top: auto;
-        }
-        .total-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 1.2em;
-            margin-bottom: 0.5rem;
-            align-items: center;
-        }
-        .total-row label, .total-row span {
-            font-weight: bold;
-        }
-        #discount-input {
-            width: 120px;
-            font-size: 1em;
-            text-align: right;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            padding: 5px;
-        }
-        #cart-total {
-            color: var(--success-color);
-            font-size: 1.5em;
-        }
-
-        .button-group { display: flex; gap: 0.5rem; margin-top: 1rem; }
-        .button-group-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-
-        button {
-            background-color: var(--primary-color); color: white; border: none;
-            padding: 0.75rem 1rem; border-radius: 4px; cursor: pointer;
-            font-size: 1em; font-family: 'Sarabun', sans-serif;
-            transition: background-color 0.3s, transform 0.1s;
-        }
-        
-        button:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-        }
-        button:active { transform: scale(0.98); }
-        button.finish-sale { background-color: var(--success-color); }
-        button.clear-cart { background-color: var(--danger-color); }
-        .delete-history-btn {
-            background-color: var(--danger-color); padding: 0.25rem 0.75rem; font-size: 0.9em;
-        }
-        .edit-history-btn {
-            background-color: var(--info-color); padding: 0.25rem 0.75rem;
-            font-size: 0.9em; margin-right: 5px;
-        }
-        
-        #history-table-wrapper {
-            max-height: 600px; overflow-y: auto; border: 1px solid var(--border-color);
-            border-radius: 4px;
-        }
-        #history-table { width: 100%; border-collapse: collapse; }
-        #history-table th, #history-table td { 
-            border-bottom: 1px solid var(--border-color); padding: 0.75rem;
-            text-align: left; vertical-align: middle;
-        }
-        #history-table th { background-color: #e9ecef; position: sticky; top: 0; }
-        #history-table tr:nth-child(even) { background-color: var(--light-bg); }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.6); display: none;
-            justify-content: center; align-items: center; z-index: 1000;
-        }
-        .modal-content {
-            background-color: var(--white-color); padding: 2rem; border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 500px;
-            text-align: center;
-        }
-        .modal-content h3 { margin-top: 0; }
-        .modal-content p {
-            white-space: pre-wrap;
-            text-align: left;
-            margin-bottom: 1.5rem;
-        }
-        
-        #cash-received-input {
-            width: 100%; padding: 0.75rem; text-align: right;
-            box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-        
-        .payment-modal-body { text-align: center; }
-        .payment-modal-body .total-label { color: var(--secondary-color); font-size: 1.2rem; text-align: center; }
-        .payment-modal-body .total-amount { color: var(--primary-color); font-size: 3.2rem; font-weight: bold; margin: 0.5rem 0 1.5rem 0; }
-        .payment-modal-body .change-label { color: var(--secondary-color); font-size: 1.2rem; text-align: center; }
-        .payment-modal-body .change-amount { color: var(--success-color); font-size: 3.0rem; font-weight: bold; margin-top: 0.5rem; min-height: 48px; }
-        #cash-received-input { font-size: 2rem; }
-
-        /* Tabs System */
-        .cart-tabs-container {
-            display: flex;
-            align-items: center;
-            border-bottom: 2px solid var(--border-color);
-        }
-        #cart-tabs {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-bottom: 2px; /* For scrollbar space */
-        }
-        .tab-button {
-            padding: 0.75rem 1rem;
-            cursor: pointer;
-            background-color: transparent;
-            border: none;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -2px;
-            font-size: 1em;
-            color: var(--secondary-color);
-            position: relative;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tab-button.active {
-            color: var(--primary-color);
-            border-bottom-color: var(--primary-color);
-            font-weight: bold;
-        }
-        .close-tab-btn {
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 1.2em;
-            padding: 0 0 0 0.5rem;
-            line-height: 1;
-            opacity: 0.5;
-            border-radius: 50%;
-        }
-        .close-tab-btn:hover {
-            opacity: 1;
-            background-color: rgba(0,0,0,0.1);
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .pos-layout {
-                grid-template-columns: 1fr;
-            }
-            .filter-section { flex-direction: column; align-items: stretch !important; }
-        }
+        /* Drag and Drop Styles */
+        .sortable-ghost { opacity: 0.4; background: #dbeafe; }
+        .sortable-drag { opacity: 0.9 !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .drag-handle { cursor: grab; }
+        .selected-row { background-color: #eff6ff !important; }
     </style>
 </head>
-<body>
-    
-    <div id="login-overlay">
-        <div class="login-card">
-            <h2>POS System Login</h2>
-            <div class="login-form-group">
-                <label for="username-input">ชื่อผู้ใช้</label>
-                <input type="text" id="username-input" placeholder="เช่น 001">
-            </div>
-            <div class="login-form-group">
-                <label for="password-input">รหัสผ่าน</label>
-                <input type="password" id="password-input" placeholder="••••••••">
-            </div>
-            <button id="login-btn">เข้าสู่ระบบ</button>
-        </div>
-    </div>
+<body class="antialiased text-slate-800">
 
-    <div class="body-content">
-        <div id="logout-section">
-            <span id="user-display"></span>
-            <button id="logout-btn">ออกจากระบบ</button>
-        </div>
-
-        <main class="main-container">
-            <!-- Sales Section Card -->
-            <section class="card">
-                <div class="pos-layout">
-                    <!-- Search Column -->
-                    <div class="search-column">
-                        <h2><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ค้นหาสินค้า</h2>
-                        <div class="form-group">
-                            <label for="barcode-input" style="font-size: 0.9em; color: var(--secondary-color);">F2=บิลใหม่ | F5=ค้นหา | F8=ล้าง | F9=ชำระเงิน | F11=ส่วนลด | Del=ปิดบิล</label>
-                            <input type="text" id="barcode-input" placeholder="ค้นหา... (เช่น: 3*1234.)" autofocus>
-                        </div>
-                        <div id="search-results"></div>
-                    </div>
-                    <!-- Cart Column -->
-                    <div class="cart-column">
-                        <div class="cart-tabs-container">
-                            <div id="cart-tabs">
-                                <!-- Tabs will be dynamically inserted here -->
-                            </div>
-                        </div>
-                        
-                        <div id="edit-status" style="display: none; padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 4px; margin-bottom: 1rem; margin-top:1rem;"></div>
-                        <div class="cart-header-row">
-                            <span class="col-seq">#</span>
-                            <span class="col-name">สินค้า</span>
-                            <span class="col-qty col-center">จำนวน</span>
-                            <span class="col-price col-right">ราคา/หน่วย</span>
-                            <span class="col-total col-right">รวม</span>
-                            <span class="col-delete col-center">ลบ</span>
-                        </div>
-                        <ul id="cart-items"></ul>
-                        <div class="totals-section">
-                            <div class="total-row">
-                                <label>ยอดรวม:</label>
-                                <span id="cart-subtotal">0.00</span>
-                            </div>
-                            <div class="total-row">
-                                <label for="discount-input">ส่วนลด (บาท):</label>
-                                <input type="number" id="discount-input" placeholder="0.00">
-                            </div>
-                            <div class="total-row" style="font-size: 1.5em; color: var(--success-color);">
-                                <label>ยอดสุทธิ:</label>
-                                <span id="cart-total">0.00</span>
-                            </div>
-                        </div>
-                        <div class="button-group-2">
-                            <button class="finish-sale">ชำระเงิน (F9)</button>
-                            <button class="clear-cart">ล้างตะกร้า (F8)</button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-    
-            <!-- History and Summary Section -->
-            <section class="card">
-                <h2 id="summary-title">สรุปยอดขาย</h2>
-                <div class="summary-grid">
-                    <div class="summary-item">
-                        <div class="label">ยอดขายรวม</div>
-                        <div class="value" id="summary-total-sales">0.00</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="label">ส่วนลดรวม</div>
-                        <div class="value" id="summary-total-discount" style="color: var(--warning-color);">0.00</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="label">ยอดขายสุทธิ</div>
-                        <div class="value" id="summary-net-sales" style="color: var(--success-color);">0.00</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="label">จำนวนบิล</div>
-                        <div class="value" id="summary-bill-count">0</div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="card">
-                <h2>ประวัติการขาย</h2>
-    
-                <!-- Date Filter Section -->
-                <div class="filter-section" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
-                    <label for="start-date">ตั้งแต่วันที่:</label>
-                    <input type="date" id="start-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
-                    <label for="end-date">ถึงวันที่:</label>
-                    <input type="date" id="end-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
-                    <button id="filter-history-btn" style="flex-grow: 0;">ค้นหา</button>
-                </div>
-    
-                <div class="button-group" style="justify-content: flex-start; margin-bottom: 1rem;">
-                    <button id="my-history-btn" style="flex-grow: 0; background-color: var(--secondary-color);">ประวัติของฉัน</button>
-                    <button id="all-history-btn" style="flex-grow: 0; background-color: var(--warning-color);">ประวัติทั้งหมด (แอดมิน)</button>
-                    <button id="export-excel-btn" style="flex-grow: 0;">Export to Excel</button>
-                    <button id="clear-all-history-btn" class="clear-cart" style="flex-grow: 0; margin-left: auto;">ล้างประวัติทั้งหมด</button>
-                </div>
-                <div id="history-table-wrapper">
-                    <table id="history-table">
-                        <thead>
-                            <tr><th>วันที่/เวลา</th><th>รหัสการขาย</th><th>รายการสินค้า (จำนวน)</th><th>ส่วนลด</th><th>ยอดรวมสุทธิ</th><th>การกระทำ</th></tr>
-                        </thead>
-                        <tbody id="history-body"></tbody>
-                    </table>
-                </div>
-            </section>
-        </main>
-    
-        <!-- Payment Modal -->
-        <div id="payment-modal" class="modal-overlay">
-            <div class="modal-content">
-                <div class="payment-modal-body">
-                    <p class="total-label">ยอดสุทธิที่ต้องชำระ</p>
-                    <p class="total-amount" id="payment-total-final">0.00</p>
-    
-                    <input type="number" id="cash-received-input" step="any" placeholder="จำนวนเงินที่รับมา">
-    
-                    <p class="change-label">เงินทอน</p>
-                    <p class="change-amount" id="payment-change">0.00</p>
-                </div>
-                <div class="button-group" style="margin-top: 1.5rem; justify-content: center;">
-                    <button id="confirm-sale-btn" class="finish-sale">ยืนยันการขาย (Enter)</button>
-                    <button class="clear-cart" id="cancel-payment-btn">ยกเลิก (ESC)</button>
-                </div>
-            </div>
-        </div>
-            
-        <!-- Delete Confirmation Modal -->
-        <div id="delete-confirm-modal" class="modal-overlay">
-            <div class="modal-content">
-                <h3>ยืนยันการลบ</h3>
-                <p id="delete-confirm-text"></p>
-                <div class="button-group" style="justify-content: center;">
-                    <button id="confirm-delete-btn" class="clear-cart">ยืนยันการลบ</button>
-                    <button id="cancel-delete-btn">ยกเลิก</button>
-                </div>
-            </div>
-        </div>
-    
-        <!-- Clear History Options Modal -->
-        <div id="clear-options-modal" class="modal-overlay">
-            <div class="modal-content">
-                <h3>เลือกวิธีการล้างประวัติ</h3>
-                <p>คุณต้องการล้างประวัติการขายแบบใด?</p>
-                <div class="button-group" style="flex-direction: column; gap: 1rem;">
-                    <button id="clear-local-btn" class="clear-cart" style="background-color: var(--info-color);">ล้างเฉพาะหน้าเว็บนี้</button>
-                    <button id="clear-db-btn" class="clear-cart">ล้างจากฐานข้อมูล (ถาวร)</button>
-                    <button id="cancel-clear-btn" style="background-color: var(--secondary-color);">ยกเลิก</button>
-                </div>
-            </div>
-        </div>
+    <div id="app-container" class="relative min-h-screen">
         
-        <!-- General Information Modal (replaces alerts) -->
-        <div id="info-modal" class="modal-overlay">
-            <div class="modal-content">
-                <h3 id="info-modal-title" style="color: var(--primary-color);"></h3>
-                <p id="info-modal-text"></p>
-                <div class="button-group" style="justify-content: center;">
-                    <button id="info-modal-ok-btn">ตกลง (Enter/ESC)</button>
+        <!-- Main View -->
+        <div id="main-view" class="flex flex-col h-screen">
+            <header class="bg-white border-b border-slate-50 px-1 py-1">
+                 <div class="container mx-auto flex justify-between items-center">
+                    <div class="flex items-center gap-1">
+                        <button id="history-view-button" class="text-slate-500 hover:bg-slate-100 w-10 h-10 rounded-full transition-colors" title="ประวัติการเบิกของ">
+                            <i class="fas fa-history"></i>
+                        </button>
+                        <button id="cart-button" class="relative text-slate-500 hover:bg-slate-100 w-10 h-10 rounded-full transition-colors" title="ตะกร้าสินค้า">
+                            <i class="fas fa-shopping-cart"></i>
+                            <span id="cart-badge" class="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full hidden">0</span>
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </header>
+            
+            <main class="container mx-auto p-3 sm:p-4 flex-grow flex flex-col">
+                <div class="text-center mb-4 flex flex-col sm:flex-row justify-center items-center gap-2 sm:gap-4">
+                     <button id="show-hidden-button" class="hidden text-xs sm:text-sm text-blue-600 font-semibold hover:underline">แสดงรายการที่ซ่อน</button>
+                </div>
+
+                <div id="data-container" class="bg-white rounded-xl shadow-lg overflow-hidden flex-grow flex flex-col">
+                    <div id="table-wrapper" class="overflow-auto flex-grow">
+                        <div id="loading" class="hidden"><div class="loader"></div><p class="text-center text-slate-500">กำลังโหลดข้อมูล...</p></div>
+                        <div id="table-output"></div>
+                        <div id="error-message" class="hidden p-8 text-center"><p class="text-red-600 font-semibold">เกิดข้อผิดพลาด</p><p class="text-slate-500 mt-2" id="error-text"></p></div>
+                    </div>
+                    <footer class="bg-white border-t border-slate-200 px-4 py-1 text-center">
+                        <p id="table-info" class="text-xs text-slate-500 truncate"></p>
+                    </footer>
+                    <div id="sheet-tabs-container" class="bg-slate-100 border-t border-slate-200 flex items-center overflow-x-auto">
+                        <!-- Sheet tabs will be injected here -->
+                    </div>
+                </div>
+            </main>
         </div>
-    
-        <!-- Save Success Overlay -->
-        <div id="save-success-overlay" class="modal-overlay" style="background-color: rgba(0,0,0,0.4);">
-            <div style="background-color: var(--success-color); color: white; padding: 2rem 4rem; border-radius: 8px; font-size: 1.5em; font-weight: bold; text-align: center;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <p>บันทึกการขายสำเร็จ!</p>
-                <p style="font-size: 0.7em; font-weight: normal; margin-top: 1rem;">กด Enter เพื่อไปต่อ</p>
+
+        <!-- History View -->
+        <div id="history-view" class="hidden page-content">
+             <main class="container mx-auto p-3 sm:p-4 md:p-8">
+                <header class="flex justify-between items-center mb-6">
+                    <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">ประวัติการเบิกของ</h1>
+                    <button id="back-to-main-button" class="text-white bg-indigo-600 hover:bg-indigo-700 font-semibold py-2 px-4 rounded-lg flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> กลับหน้าหลัก
+                    </button>
+                </header>
+                <div id="history-list-container" class="space-y-3"></div>
+             </main>
+        </div>
+
+        <!-- Shopping Cart Sidebar -->
+        <div id="cart-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+        <aside id="cart-sidebar" class="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-xl z-50 transform translate-x-full flex flex-col">
+            <div class="flex items-center justify-between p-4 border-b">
+                <h2 class="text-xl font-bold">รายการเบิกของ</h2>
+                <button id="close-cart-button" class="text-slate-500 hover:text-slate-800 p-2"><i class="fas fa-times fa-lg"></i></button>
             </div>
+            <div id="cart-items" class="flex-grow p-4 overflow-y-auto">
+                <p id="empty-cart-message" class="text-center text-slate-500 mt-8">ยังไม่มีรายการเบิกของ</p>
+            </div>
+            <div class="p-4 border-t bg-slate-50 grid grid-cols-2 gap-2">
+                <div>
+                    <span class="text-sm font-bold block">จำนวนรวม:</span>
+                    <span id="cart-total-quantity" class="text-xl font-bold text-indigo-600">0 ชิ้น</span>
+                </div>
+                <button id="confirm-order-button" class="w-full py-2 px-4 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">ยืนยันการเบิกของ</button>
+                <button id="clear-cart-button" class="col-span-2 w-full mt-2 py-2 px-4 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition-colors">ล้างรายการเบิกของ</button>
+            </div>
+        </aside>
+
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[60] hidden items-center justify-center p-4">
+             <div class="modal-content bg-white rounded-xl shadow-2xl w-full max-w-md flex flex-col">
+                <div id="order-summary-content" class="p-6">
+                    <div class="text-center mb-4">
+                        <h3 class="text-2xl font-bold">สรุปรายการเบิกของ</h3>
+                        <p id="order-id-display" class="text-sm text-slate-500 font-mono"></p>
+                    </div>
+                    <div id="order-details" class="text-sm border-t border-b py-2 my-2 max-h-64 overflow-y-auto"></div>
+                    <div class="flex justify-between font-bold text-lg mt-4">
+                        <span>จำนวนเบิกสุทธิ:</span>
+                        <span id="order-total-quantity" class="text-indigo-600"></span>
+                    </div>
+                    <div id="db-status" class="text-center text-xs text-slate-400 mt-4 h-4"></div>
+                </div>
+                <div class="p-4 bg-slate-50 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-b-xl">
+                    <button id="save-png-button" class="w-full py-2.5 px-4 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 flex items-center justify-center gap-2"><i class="fas fa-file-image"></i> บันทึก PNG</button>
+                    <button id="share-line-button" class="w-full py-2.5 px-4 bg-[#06C755] text-white font-semibold rounded-lg hover:bg-[#05a546] flex items-center justify-center gap-2"><i class="fab fa-line"></i> แชร์ LINE</button>
+                    <button id="close-modal-button" class="col-span-1 sm:col-span-2 mt-2 w-full py-2 px-4 bg-slate-200 text-slate-700 font-semibold rounded-lg hover:bg-slate-300">ปิด</button>
+                </div>
+             </div>
         </div>
     </div>
-
-
-    <!-- Firebase SDK -->
+    
+    <!-- Firebase SDKs -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, serverTimestamp, collection, query, orderBy, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
-            apiKey: "AIzaSyC5F51iZszxjBm8WoWs0u8jqhGHVIJlkPU",
-            authDomain: "pos2-67ef6.firebaseapp.com",
-            projectId: "pos2-67ef6",
-            storageBucket: "pos2-67ef6.appspot.com",
-            messagingSenderId: "406167535023",
-            appId: "1:406167535023:web:bdb7b1b951a9f74a00835a",
-            measurementId: "G-11SRL928VL"
+            apiKey: "AIzaSyCFmPfvZMwgZacZfbh2CAnNbgudSGVhfeQ",
+            authDomain: "inventory-rakya.firebaseapp.com",
+            projectId: "inventory-rakya",
+            storageBucket: "inventory-rakya.appspot.com",
+            messagingSenderId: "832335850184",
+            appId: "1:832335850184:web:69cc594ef302e8f7a753fd",
+            measurementId: "G-J81YS36FN5"
         };
-        
-        // This check ensures Firebase is only initialized if the config is present.
-        if (firebaseConfig) {
-            const app = initializeApp(firebaseConfig);
-            const db = getFirestore(app);
-            const auth = getAuth(app);
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const BASE_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHNXWH--q-dp4ziR3rCAKfKEKrYtbqgpJySy7MGS5sIf1p4oPUWq-N308LzvgAtQzKLpQzxIpBF-dy/pub?output=csv';
+            const sheets = [ { name: 'Carnation', gid: '1202826527' }, { name: 'Dumilk', gid: '558528573' }, { name: 'Enfa', gid: '1686260164' }, { name: 'S-26', gid: '541838051' }, { name: 'Hi-q', gid: '2048095283' }, { name: 'Dumex', gid: '335261999' }, { name: 'Lactogen', gid: '541838051' }, { name: 'นมหมี', gid: '1107720102' }, { name: 'UHT', gid: '1569495958' }, { name: 'Ensure', gid: '1949963044' }, { name: 'Glucerna', gid: '1918336836' }, { name: 'MamyPoko', gid: '1243801307' }, { name: 'BabyLove', gid: '1599419486' }, { name: 'Molfix', gid: '1854621604' }, { name: 'Goon', gid: '1166178099' }, { name: 'DodoLove', gid: '1371683625' }, { name: 'Certainty', gid: '426207624' }, { name: 'ไลฟ์รี่', gid: '385223925' }, { name: 'D-Nee', gid: '392683454' }, { name: 'Kodomo', gid: '930076186' }, { name: 'Babi mild', gid: '2134227081' }, { name: 'Johnson', gid: '400235897' }, { name: 'Enfant', gid: '691776819' }, { name: 'แคร์', gid: '11208593' }, { name: 'Attoon', gid: '11208593' }, { name: 'Nuebabe', gid: '518139187' }, { name: 'Pigeon', gid: '7309826' }, { name: 'Nutur', gid: '92634505' }];
             
-            window.db = db;
-            window.appId = "pos2-67ef6"; // Use project ID as app ID
-            window.firebase = {
-                auth,
-                collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc, collectionGroup
-            };
-
-            // Sign in anonymously to get permissions for Firestore
-            signInAnonymously(auth).catch((error) => {
-                 console.error("Anonymous sign-in failed:", error);
-                 window.firebaseAuthFailed = true;
-            });
-
-        } else {
-            console.error("Firebase configuration is missing.");
-            window.firebaseFailed = true;
-        }
-
-    </script>
-
-    <script>
-    // --- GLOBAL STATE & CONFIG ---
-    const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTI3YprJH_ZZDF5A3ovmZwwByaMJ_wrZhPWoZjSkMqSxc3ouBlx6kDBRB_f7nY5D39AvvjR4V34JMVd/pub?gid=146829827&single=true&output=csv';
-    const USERS = {
-        "001": "narinqq",
-        "002": "002"
-    };
-
-    let productDatabase = [];
-    let salesHistory = [];
-    let currentSearchResults = [];
-    let selectedSearchIndex = -1;
-    let unsubscribeSalesHistory = null;
-    let isSaving = false;
-    let activeModalCloseHandler = null;
-    let tabs = new Map();
-    let activeTabId = null;
-
-    const thaiToEngMap = { 'ๅ': '1', '/': '2', '-': '3', 'ภ': '4', 'ถ': '5', 'ุ': '6', 'ึ': '7', 'ค': '8', 'ต': '9', 'จ': '0', 'ข': '-', 'ช': '=', 'ๆ': 'q', 'ไ': 'w', 'ำ': 'e', 'พ': 'r', 'ะ': 't', 'ั': 'y', 'ี': 'u', 'ร': 'i', 'น': 'o', 'ย': 'p', 'บ': '[', 'ล': ']', 'ฟ': 'a', 'ห': 's', 'ก': 'd', 'ด': 'f', 'เ': 'g', '้': 'h', '่': 'j', 'า': 'k', 'ส': 'l', 'ว': ';', 'ง': "'", 'ผ': 'z', 'ป': 'x', 'แ': 'c', 'อ': 'v', 'ิ': 'b', 'ท': 'n', 'ม': 'm', 'ใ': ',', 'ฝ': '.', 'ซ': '/' };
-    function translateThaiToEng(input) { return input.split('').map(char => thaiToEngMap[char] || char).join(''); }
-
-    // --- MAIN APP INITIALIZATION ---
-    document.addEventListener('DOMContentLoaded', () => {
-        if (window.firebaseFailed) {
-            showInfoModal("ข้อผิดพลาดร้ายแรง", "ไม่พบการตั้งค่า Firebase ไม่สามารถเชื่อมต่อฐานข้อมูลได้", true);
-            return;
-        }
-        if (window.firebaseAuthFailed) {
-             showInfoModal("ข้อผิดพลาดการยืนยันตัวตน", "ไม่สามารถเชื่อมต่อฐานข้อมูลได้ กรุณาลองอีกครั้ง", true);
-             return;
-        }
-        
-        document.getElementById('login-btn').addEventListener('click', handleLogin);
-        document.getElementById('logout-btn').addEventListener('click', handleLogout);
-        
-        const loggedInUser = sessionStorage.getItem('posUsername');
-        if (loggedInUser) {
-            showMainApp(loggedInUser);
-        } else {
-            showLoginScreen();
-        }
-    });
-    
-    // --- UI VIEW CONTROLLERS ---
-    function showLoginScreen() {
-        document.getElementById('login-overlay').style.display = 'flex';
-        document.querySelector('.body-content').style.display = 'none';
-    }
-
-    function showMainApp(username) {
-        window.userId = username;
-        console.log("User is logged in. UserID:", window.userId);
-
-        document.getElementById('login-overlay').style.display = 'none';
-        document.querySelector('.body-content').style.display = 'block';
-        document.getElementById('logout-section').style.display = 'flex';
-        document.getElementById('user-display').textContent = `ผู้ใช้: ${username}`;
-        
-        initializeAppLogic();
-    }
-
-    function initializeAppLogic() {
-        console.log("Initializing main application...");
-        clearDataOnLogout(); 
-        loadSalesHistoryFromFirestore();
-        if (tabs.size === 0) {
-            addNewSaleTab();
-        }
-        loadProductData();
-        setupEventListeners();
-        document.getElementById('barcode-input').focus();
-    }
-    
-    function clearDataOnLogout() {
-        salesHistory = [];
-        tabs = new Map();
-        activeTabId = null;
-        if (unsubscribeSalesHistory) {
-            unsubscribeSalesHistory();
-            unsubscribeSalesHistory = null;
-        }
-        updateHistoryDisplay();
-        calculateSummaryForDisplayedHistory();
-        renderTabs();
-        const cartItemsEl = document.getElementById('cart-items');
-        if (cartItemsEl) cartItemsEl.innerHTML = '';
-        updateCartDisplay();
-    };
-
-    function setupEventListeners() {
-        document.getElementById('barcode-input').addEventListener('input', handleInstantSearch);
-        document.getElementById('barcode-input').addEventListener('keydown', handleSearchKeyDown);
-        
-        document.getElementById('discount-input').addEventListener('input', updateCartOnInput);
-        document.getElementById('discount-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                showPaymentModal();
-            }
-        });
-
-        document.querySelector('.finish-sale').addEventListener('click', showPaymentModal);
-        document.querySelector('.clear-cart').addEventListener('click', clearCart);
-        
-        document.getElementById('filter-history-btn').addEventListener('click', filterHistoryByDate);
-        document.getElementById('my-history-btn').addEventListener('click', () => loadSalesHistoryFromFirestore());
-        document.getElementById('all-history-btn').addEventListener('click', loadAllSalesHistory);
-        document.getElementById('export-excel-btn').addEventListener('click', exportToExcel);
-        document.getElementById('clear-all-history-btn').addEventListener('click', showClearOptionsModal);
-        
-        document.getElementById('cash-received-input').addEventListener('input', calculateChange);
-        document.getElementById('cash-received-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                calculateChange();
-                document.getElementById('confirm-sale-btn').focus();
-            }
-        });
-        document.getElementById('confirm-sale-btn').addEventListener('click', confirmSale);
-        document.getElementById('cancel-payment-btn').addEventListener('click', hidePaymentModal);
-        
-        document.getElementById('cancel-delete-btn').addEventListener('click', hideDeleteConfirmModal);
-        
-        document.getElementById('clear-local-btn').addEventListener('click', clearHistoryLocally);
-        document.getElementById('clear-db-btn').addEventListener('click', executeClearAllHistory);
-        document.getElementById('cancel-clear-btn').addEventListener('click', hideClearOptionsModal);
-        
-        document.getElementById('info-modal-ok-btn').addEventListener('click', hideInfoModal);
-        
-        document.addEventListener('keydown', handleGlobalKeyDown);
-    }
-    
-    // --- SIMPLE AUTHENTICATION HANDLERS ---
-    function handleLogin() {
-        const username = document.getElementById('username-input').value.trim();
-        const password = document.getElementById('password-input').value;
-        
-        if (USERS[username] && USERS[username] === password) {
-            sessionStorage.setItem('posUsername', username);
-            showMainApp(username);
-        } else {
-            showInfoModal("เข้าสู่ระบบไม่สำเร็จ", "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง", true);
-        }
-    };
-    
-    function handleLogout() {
-        sessionStorage.removeItem('posUsername');
-        window.userId = null;
-        clearDataOnLogout();
-        showLoginScreen();
-    };
-
-
-    // --- FIRESTORE HELPERS ---
-    function getSalesHistoryCollectionRef() {
-        // We use the custom username as the path segment
-        if (!window.userId || !window.appId) {
-            console.error("User or App ID not available for Firestore query.");
-            return null;
-        }
-        return window.firebase.collection(window.db, `artifacts/${window.appId}/users/${window.userId}/salesHistory`);
-    }
-
-    function getSalesHistoryDocRef(firestoreId) {
-        if (!window.userId || !window.appId || !firestoreId) {
-            console.error("User, App ID or Document ID not available for Firestore query.");
-            return null;
-        }
-        return window.firebase.doc(window.db, `artifacts/${window.appId}/users/${window.userId}/salesHistory`, firestoreId);
-    }
-    
-    // --- MODAL & NOTIFICATION SYSTEM ---
-    window.showInfoModal = (title, text, isError = false) => {
-        const titleEl = document.getElementById('info-modal-title');
-        const textEl = document.getElementById('info-modal-text');
-        const okBtn = document.getElementById('info-modal-ok-btn');
-        
-        titleEl.textContent = title;
-        titleEl.style.color = isError ? 'var(--danger-color)' : 'var(--primary-color)';
-        textEl.textContent = text;
-        okBtn.style.backgroundColor = isError ? 'var(--danger-color)' : 'var(--primary-color)';
-        
-        document.getElementById('info-modal').style.display = 'flex';
-
-        activeModalCloseHandler = (e) => {
-            if (e.key === 'Enter' || e.key === 'Escape') {
-                e.preventDefault();
-                hideInfoModal();
-            }
-        };
-        document.addEventListener('keydown', activeModalCloseHandler);
-        okBtn.focus();
-    };
-
-    window.hideInfoModal = () => {
-        document.getElementById('info-modal').style.display = 'none';
-        if (activeModalCloseHandler) {
-            document.removeEventListener('keydown', activeModalCloseHandler);
-            activeModalCloseHandler = null;
-        }
-    };
-
-    // --- KEYBOARD HANDLING ---
-    function handleSearchKeyDown(e) {
-        if (e.key === 'Enter') { 
-            e.preventDefault();
-            const inputValue = document.getElementById('barcode-input').value.trim();
-            const quantityPattern = /^(\d+)\s*\*\s*(.+)$/;
-            const match = inputValue.match(quantityPattern);
-
-            if (currentSearchResults.length > 0 && selectedSearchIndex !== -1) {
-                let quantityToAdd = 1;
-                if (match) {
-                    quantityToAdd = parseInt(match[1], 10);
+            const ui = {
+                mainView: document.getElementById('main-view'),
+                historyView: document.getElementById('history-view'),
+                historyViewButton: document.getElementById('history-view-button'),
+                backToMainButton: document.getElementById('back-to-main-button'),
+                historyListContainer: document.getElementById('history-list-container'),
+                sheetTabsContainer: document.getElementById('sheet-tabs-container'), 
+                tableOutput: document.getElementById('table-output'),
+                tableInfo: document.getElementById('table-info'), loading: document.getElementById('loading'),
+                error: { el: document.getElementById('error-message'), text: document.getElementById('error-text') },
+                showHiddenButton: document.getElementById('show-hidden-button'),
+                cart: {
+                    button: document.getElementById('cart-button'), badge: document.getElementById('cart-badge'),
+                    overlay: document.getElementById('cart-overlay'), sidebar: document.getElementById('cart-sidebar'),
+                    closeButton: document.getElementById('close-cart-button'), itemsContainer: document.getElementById('cart-items'),
+                    emptyMessage: document.getElementById('empty-cart-message'), totalQuantityEl: document.getElementById('cart-total-quantity'),
+                    clearButton: document.getElementById('clear-cart-button'), confirmButton: document.getElementById('confirm-order-button')
+                },
+                modal: {
+                    el: document.getElementById('confirmation-modal'), closeButton: document.getElementById('close-modal-button'),
+                    orderDetails: document.getElementById('order-details'), orderTotalQuantity: document.getElementById('order-total-quantity'),
+                    orderIdDisplay: document.getElementById('order-id-display'), dbStatus: document.getElementById('db-status'),
+                    savePngButton: document.getElementById('save-png-button'), shareLineButton: document.getElementById('share-line-button'),
+                    summaryContent: document.getElementById('order-summary-content')
                 }
-                addToCart(currentSearchResults[selectedSearchIndex], quantityToAdd);
-                document.getElementById('barcode-input').value = '';
-                currentSearchResults = []; 
-                selectedSearchIndex = -1; 
-                displaySearchResults([]);
-            } else if (getActiveCart().length > 0 && inputValue === '') {
-                document.getElementById('discount-input').focus();
-                document.getElementById('discount-input').select();
-            }
-        } 
-        else if (e.key === 'ArrowDown') { e.preventDefault(); navigateSearchResults(1); } 
-        else if (e.key === 'ArrowUp') { e.preventDefault(); navigateSearchResults(-1); }
-    }
-    function handleGlobalKeyDown(e) { 
-        if (activeModalCloseHandler) return;
+            };
+            
+            let state = { activeTab: null, cart: new Map(), currentSheetData: [], productIdentifierHeader: '', unitHeader: '' };
+            let currentlyViewedOrder = null;
 
-        if (e.ctrlKey && (e.key === 'Tab' || e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
-            e.preventDefault();
-            const direction = (e.shiftKey || e.key === 'ArrowLeft') ? -1 : 1;
-            navigateTabs(direction);
-        }
-        else if (e.ctrlKey && e.key === 'w') {
-            e.preventDefault();
-            if(activeTabId) closeTab(activeTabId);
-        }
-        else if (e.key === 'Delete') {
-            e.preventDefault();
-            if(activeTabId) closeTab(activeTabId, false); 
-        }
-        else if (e.key === 'F9') { e.preventDefault(); showPaymentModal(); } 
-        else if (e.key === 'F5') { e.preventDefault(); document.getElementById('barcode-input').focus(); } 
-        else if (e.key === 'F11') { e.preventDefault(); document.getElementById('discount-input').focus(); document.getElementById('discount-input').select(); }
-        else if (e.key === 'F2') { e.preventDefault(); addNewSaleTab(); }
-        else if (e.key === 'F8') { e.preventDefault(); clearCart(); }
-        else if (e.key === 'Escape') {
-            if (document.getElementById('payment-modal').style.display === 'flex') { e.preventDefault(); hidePaymentModal(); }
-            if (document.getElementById('delete-confirm-modal').style.display === 'flex') { e.preventDefault(); hideDeleteConfirmModal(); }
-            if (document.getElementById('clear-options-modal').style.display === 'flex') { e.preventDefault(); hideClearOptionsModal(); }
-            if (document.getElementById('save-success-overlay').style.display === 'flex') {
-                e.preventDefault();
-                hideSuccessOverlay();
-            }
-        }
-    }
-
-    function navigateSearchResults(direction) {
-        if (currentSearchResults.length === 0) return;
-        selectedSearchIndex += direction;
-        if (selectedSearchIndex < 0) selectedSearchIndex = currentSearchResults.length - 1;
-        else if (selectedSearchIndex >= currentSearchResults.length) selectedSearchIndex = 0;
-        updateSelectedSearchResult();
-    }
-    
-    function updateSelectedSearchResult() {
-        const items = document.querySelectorAll('.search-item');
-        items.forEach((item, index) => {
-            if (index === selectedSearchIndex) {
-                item.classList.add('selected');
-                item.scrollIntoView({ block: 'nearest' });
-            } else {
-                item.classList.remove('selected');
-            }
-        });
-    }
-
-    // --- DATA LOADING & SAVING ---
-    function loadProductData() {
-        if (productDatabase.length > 0) {
-            console.log("Product data already loaded.");
-            return;
-        }
-        Papa.parse(GOOGLE_SHEET_URL, {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            complete: function(results) {
-                console.log("Finished parsing with PapaParse:", results.data);
-                productDatabase = results.data.filter(p => p['รหัสสินค้า'] && p['รหัสสินค้า'].toString().trim() !== '');
-
-                productDatabase.forEach(p => {
-                    if (typeof p['ราคา'] !== 'number' || isNaN(p['ราคา'])) {
-                       p['ราคา'] = 0;
-                    }
-                    p._searchableText = [
-                        p['สินค้า'], p['รหัสสินค้า'], p['บาร์โค้ด']
-                    ].join(' ').toLowerCase();
+            onAuthStateChanged(auth, (user) => {
+                if (user) initializeAppLogic();
+                else signInAnonymously(auth).catch(() => {
+                    ui.error.text.textContent = "ไม่สามารถเชื่อมต่อฐานข้อมูลได้";
+                    ui.error.el.classList.remove('hidden');
                 });
-                console.log("Product database loaded and processed:", productDatabase);
-            },
-            error: function(error, file) {
-                console.error('Error parsing product data with PapaParse:', error, file);
-                showInfoModal('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้าจาก Google Sheet', true);
+            });
+
+            function initializeAppLogic() {
+                ui.tableOutput.addEventListener('click', handleTableClick);
+                ui.tableOutput.addEventListener('dblclick', handleTableRowDoubleClick);
+                ui.cart.itemsContainer.addEventListener('click', handleCartButtonClick);
+                ui.cart.button.addEventListener('click', () => toggleCart(true));
+                ui.cart.closeButton.addEventListener('click', () => toggleCart(false));
+                ui.cart.overlay.addEventListener('click', () => toggleCart(false));
+                ui.cart.clearButton.addEventListener('click', clearCart);
+                ui.cart.confirmButton.addEventListener('click', () => showConfirmationModal());
+                ui.modal.closeButton.addEventListener('click', () => toggleModal(false));
+                ui.modal.savePngButton.addEventListener('click', saveOrderAsPng);
+                ui.modal.shareLineButton.addEventListener('click', shareOrderToLine);
+                ui.historyViewButton.addEventListener('click', showHistoryView);
+                ui.backToMainButton.addEventListener('click', showMainView);
+                ui.showHiddenButton.addEventListener('click', showAllHiddenRows);
+
+                createSheetTabs();
+                const firstTab = ui.sheetTabsContainer.querySelector('.sheet-tab');
+                if (firstTab) firstTab.click();
+                renderCart();
             }
-        });
-    }
-
-    // --- SEARCH LOGIC ---
-    function handleInstantSearch(e) {
-        const query = e.target.value.toLowerCase().trim();
-        const quantityPattern = /^(\d+)\s*\*\s*(.+)$/;
-        const match = query.match(quantityPattern);
-        let effectiveQuery = match ? match[2].trim() : query;
-
-        if (effectiveQuery.length < 1) {
-            currentSearchResults = []; selectedSearchIndex = -1; displaySearchResults([]);
-            return;
-        }
-
-        const translatedQuery = translateThaiToEng(effectiveQuery);
-        const queryTerms = effectiveQuery.split(' ').filter(term => term.length > 0);
-        const translatedQueryTerms = translatedQuery.split(' ').filter(term => term.length > 0);
-
-        currentSearchResults = productDatabase.filter(p => {
-            const allTermsMatch = queryTerms.every(term => p._searchableText.includes(term));
-            const allTranslatedTermsMatch = translatedQueryTerms.every(term => p._searchableText.includes(term));
-            return allTermsMatch || allTranslatedTermsMatch;
-        });
-
-        selectedSearchIndex = currentSearchResults.length > 0 ? 0 : -1;
-        displaySearchResults(currentSearchResults);
-    }
-    
-    function displaySearchResults(results) {
-        const resultsContainer = document.getElementById('search-results');
-        resultsContainer.innerHTML = '';
-        if (results.length === 0) return;
-        results.forEach((product, index) => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'search-item';
-            if (index === selectedSearchIndex) itemDiv.classList.add('selected');
-            itemDiv.innerHTML = `<span>${product['สินค้า']}</span><span class="price" style="color:var(--success-color); font-weight:bold;">${parseFloat(product['ราคา']).toFixed(2)} ฿</span>`;
-            itemDiv.onclick = () => {
-                const inputValue = document.getElementById('barcode-input').value.trim();
-                const quantityPattern = /^(\d+)\s*\*\s*(.+)$/;
-                const match = inputValue.match(quantityPattern);
-                let quantityToAdd = 1;
-                if (match) {
-                    quantityToAdd = parseInt(match[1], 10);
+            
+            function showMainView() {
+                ui.historyView.classList.add('hidden');
+                ui.mainView.classList.remove('hidden');
+            }
+            
+            async function showHistoryView() {
+                ui.mainView.classList.add('hidden');
+                ui.historyView.classList.remove('hidden');
+                const container = ui.historyListContainer;
+                container.innerHTML = `<div class="text-center py-8"><div class="loader"></div><p>กำลังโหลดประวัติ...</p></div>`;
+                try {
+                    const q = query(collection(db, "requests"), orderBy("createdAt", "desc"));
+                    const querySnapshot = await getDocs(q);
+                    if (querySnapshot.empty) {
+                        container.innerHTML = `<div class="text-center py-12 text-slate-500"><i class="fas fa-box-open fa-3x mb-4"></i><p>ยังไม่มีประวัติการเบิกของ</p></div>`;
+                        return;
+                    }
+                    container.innerHTML = '';
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        const historyItem = document.createElement('button');
+                        historyItem.className = 'w-full text-left bg-white p-4 rounded-lg shadow hover:bg-indigo-50 transition-colors flex justify-between items-center';
+                        const date = data.createdAt?.toDate ? data.createdAt.toDate().toLocaleString('th-TH', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'ไม่มีข้อมูลวันที่';
+                        historyItem.innerHTML = `<div><p class="font-bold text-indigo-700">${data.id}</p><p class="text-sm text-slate-500">${date}</p></div><div class="text-right"><p class="font-semibold">${data.totalQuantity} ชิ้น</p></div>`;
+                        historyItem.addEventListener('click', () => { showConfirmationModal(data); });
+                        container.appendChild(historyItem);
+                    });
+                } catch (error) {
+                    console.error("Error fetching history: ", error);
+                    container.innerHTML = `<div class="text-center py-12 text-red-500">เกิดข้อผิดพลาดในการโหลดประวัติ</div>`;
                 }
-                addToCart(currentSearchResults[selectedSearchIndex], quantityToAdd);
-                document.getElementById('barcode-input').value = '';
-                currentSearchResults = []; selectedSearchIndex = -1; displaySearchResults([]);
-            };
-            resultsContainer.appendChild(itemDiv);
-        });
-    }
-
-    // --- CART & TAB LOGIC ---
-    function getActiveCart() {
-        if (!activeTabId || !tabs.has(activeTabId)) return [];
-        return tabs.get(activeTabId).cart;
-    }
-
-    function getActiveDiscount() {
-        if (!activeTabId || !tabs.has(activeTabId)) return 0;
-        return tabs.get(activeTabId).discount;
-    }
-
-    function setActiveDiscount(value) {
-        if (activeTabId && tabs.has(activeTabId)) {
-            tabs.get(activeTabId).discount = value;
-        }
-    }
-
-    function addToCart(product, quantityToAdd = 1) {
-        const cart = getActiveCart();
-        if (!cart) return;
-
-        const existingProduct = cart.find(item => item['รหัสสินค้า'] === product['รหัสสินค้า']);
-        if (existingProduct) { 
-            existingProduct.quantity += quantityToAdd;
-        } else { 
-            cart.push({ ...product, quantity: quantityToAdd }); 
-        }
-        updateCartDisplay();
-    }
-    
-    function deleteItemFromCart(index) {
-        const cart = getActiveCart();
-        cart.splice(index, 1);
-        updateCartDisplay();
-    }
-
-    function editItemQuantity(index, newQuantityString) {
-        const cart = getActiveCart();
-        const newQuantity = parseInt(newQuantityString, 10);
-        if (isNaN(newQuantity) || newQuantity <= 0) {
-            cart.splice(index, 1);
-        } else {
-            const item = cart[index];
-            if (item) {
-                item.quantity = newQuantity;
-            }
-        }
-        updateCartDisplay();
-    }
-
-    function editItemPrice(index, newPriceString) {
-        const cart = getActiveCart();
-        const newPrice = parseFloat(newPriceString);
-        if (!isNaN(newPrice) && newPrice >= 0) {
-            const item = cart[index];
-            if (item) {
-                item['ราคา'] = newPrice;
-            }
-        }
-        updateCartDisplay();
-    }
-    
-    function editItemTotalPrice(index, newTotalString) {
-        const cart = getActiveCart();
-        const newTotal = parseFloat(newTotalString);
-        if (!isNaN(newTotal) && newTotal >= 0) {
-            const item = cart[index];
-            if (item && item.quantity > 0) {
-                item['ราคา'] = newTotal / item.quantity;
-            }
-        }
-        updateCartDisplay();
-    }
-
-    function updateCartDisplay() {
-        const cart = getActiveCart();
-        const discount = getActiveDiscount();
-        const discountInput = document.getElementById('discount-input');
-        if (discountInput) {
-            discountInput.value = discount || '';
-        }
-
-        const cartItemsElement = document.getElementById('cart-items');
-        if (cartItemsElement) cartItemsElement.innerHTML = '';
-        
-        if(!cart) return;
-
-        const subtotal = cart.reduce((sum, item) => sum + (item['ราคา'] || 0) * item.quantity, 0);
-        const total = subtotal - (discount || 0);
-
-        cart.forEach((item, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <div class="col-seq">${index + 1}.</div>
-                <div class="col-name"><strong>${item['สินค้า']}</strong></div>
-                <div class="col-qty">
-                    <input type="number" class="item-input" value="${item.quantity}" onchange="editItemQuantity(${index}, this.value)" onfocus="this.select()">
-                    <span class="item-unit" style="font-size: 0.9em; white-space: nowrap;">${item['หน่วย'] || ''}</span>
-                </div>
-                <div class="col-price col-right">
-                     <input type="number" class="item-input" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="editItemPrice(${index}, this.value)" onfocus="this.select()">
-                </div>
-                <div class="col-total col-right">
-                    <input type="number" class="item-input" value="${((item['ราคา'] || 0) * item.quantity).toFixed(2)}" onchange="editItemTotalPrice(${index}, this.value)" onfocus="this.select()">
-                </div>
-                <div class="col-delete col-center">
-                    <button class="delete-item-btn" onclick="deleteItemFromCart(${index})">&times;</button>
-                </div>
-            `;
-            if (cartItemsElement) cartItemsElement.appendChild(li);
-        });
-
-        const cartSubtotal = document.getElementById('cart-subtotal');
-        const cartTotal = document.getElementById('cart-total');
-        if (cartSubtotal) cartSubtotal.textContent = subtotal.toFixed(2);
-        if (cartTotal) cartTotal.textContent = total.toFixed(2);
-    }
-    function updateCartOnInput(){
-        const discountValue = parseFloat(document.getElementById('discount-input').value) || 0;
-        setActiveDiscount(discountValue);
-        updateCartDisplay();
-    }
-
-    function clearCart() {
-        const tabData = tabs.get(activeTabId);
-        if (tabData && tabData.cart.length > 0) {
-            tabData.cart = [];
-            tabData.discount = 0;
-            updateCartDisplay();
-        }
-    }
-
-    // --- PAYMENT & SUCCESS MODAL LOGIC ---
-    function showPaymentModal() {
-        const cart = getActiveCart();
-        if (cart.length === 0) return;
-        const subtotal = cart.reduce((sum, item) => sum + (item['ราคา'] || 0) * item.quantity, 0);
-        const discount = getActiveDiscount();
-        const finalTotal = subtotal - discount;
-
-        document.getElementById('payment-total-final').textContent = finalTotal.toFixed(2);
-        document.getElementById('payment-change').textContent = "0.00";
-        
-        const cashInput = document.getElementById('cash-received-input');
-        cashInput.value = '';
-        document.getElementById('payment-modal').style.display = 'flex';
-        cashInput.focus();
-    }
-    function hidePaymentModal() { 
-        document.getElementById('payment-modal').style.display = 'none'; 
-        document.getElementById('barcode-input').focus();
-    }
-    function calculateChange() {
-        const total = parseFloat(document.getElementById('payment-total-final').textContent);
-        const cashReceived = parseFloat(document.getElementById('cash-received-input').value) || 0;
-        const change = cashReceived - total;
-        const changeEl = document.getElementById('payment-change');
-        if (change >= 0) {
-            changeEl.textContent = change.toFixed(2);
-            changeEl.style.color = 'var(--success-color)';
-        } else {
-            changeEl.textContent = 'เงินไม่พอ';
-            changeEl.style.color = 'var(--danger-color)';
-        }
-    }
-
-    function showSuccessOverlay() {
-        const successOverlay = document.getElementById('save-success-overlay');
-        successOverlay.style.display = 'flex';
-
-        activeModalCloseHandler = (e) => {
-            if (e.key === 'Enter' || e.key === 'Escape') {
-                e.preventDefault();
-                hideSuccessOverlay();
-            }
-        };
-        document.addEventListener('keydown', activeModalCloseHandler);
-    }
-    
-    function hideSuccessOverlay() {
-        document.getElementById('save-success-overlay').style.display = 'none';
-        if (activeModalCloseHandler) {
-            document.removeEventListener('keydown', activeModalCloseHandler);
-            activeModalCloseHandler = null;
-        }
-        document.getElementById('barcode-input').focus();
-    }
-    
-    // --- SALE & HISTORY LOGIC (with Firestore) ---
-    async function confirmSale() {
-        if (isSaving) return; 
-        
-        const collectionRef = getSalesHistoryCollectionRef();
-        if (!collectionRef) {
-            showInfoModal("ข้อผิดพลาด", "ยังไม่ได้เชื่อมต่อกับฐานข้อมูล กรุณารอสักครู่แล้วลองอีกครั้ง", true);
-            return;
-        }
-        
-        const cart = getActiveCart();
-        const discount = getActiveDiscount();
-        const subtotal = cart.reduce((sum, item) => sum + (item['ราคา'] || 0) * item.quantity, 0);
-        const finalTotal = subtotal - discount;
-        const cashReceived = parseFloat(document.getElementById('cash-received-input').value) || 0;
-
-        if (cashReceived < finalTotal) {
-            showInfoModal("ข้อผิดพลาด", "จำนวนเงินที่รับมาไม่เพียงพอ", true);
-            return;
-        }
-        
-        isSaving = true;
-        const confirmButton = document.getElementById('confirm-sale-btn');
-        confirmButton.disabled = true;
-
-        const newSaleId = await generateSaleId();
-
-        const saleRecord = {
-            id: newSaleId,
-            timestamp: new Date().toISOString(),
-            items: JSON.parse(JSON.stringify(cart)), 
-            subtotal: subtotal,
-            discount: discount,
-            total: finalTotal,
-            cashReceived: cashReceived,
-            change: cashReceived - finalTotal,
-            user: window.userId // Add user to the record
-        };
-        
-        try {
-            await window.firebase.addDoc(collectionRef, saleRecord);
-            console.log("Sale recorded to Firestore with ID:", newSaleId);
-            
-            const tabToDelete = activeTabId;
-            closeTab(tabToDelete, false); 
-            
-            document.getElementById('edit-status').style.display = 'none';
-            hidePaymentModal();
-            showSuccessOverlay();
-
-        } catch (e) {
-            console.error("Error adding document: ", e);
-            showInfoModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการบันทึกข้อมูลการขาย!", true);
-        } finally {
-            isSaving = false;
-            confirmButton.disabled = false;
-        }
-    }
-    
-    async function editSaleRecord(firestoreId) {
-        const docRef = getSalesHistoryDocRef(firestoreId);
-        if (!docRef) {
-            showInfoModal("ข้อผิดพลาด", "ยังไม่ได้เชื่อมต่อกับฐานข้อมูล กรุณารอสักครู่แล้วลองอีกครั้ง", true);
-            return;
-        }
-        const saleToEdit = salesHistory.find(sale => sale.firestoreId === firestoreId);
-        if (!saleToEdit) {
-            console.error("Sale to edit not found in local cache:", firestoreId);
-            return;
-        }
-        
-        const newTabId = 'edit-' + Date.now();
-        tabs.set(newTabId, {
-            cart: JSON.parse(JSON.stringify(saleToEdit.items)),
-            discount: saleToEdit.discount || 0,
-            name: `แก้ไข: ${saleToEdit.id}`,
-            isEditing: true,
-            originalFirestoreId: firestoreId
-        });
-
-        try {
-            await window.firebase.deleteDoc(docRef);
-            console.log("Moved sale record to an editing tab:", firestoreId);
-        } catch(e) {
-            console.error("Error deleting document for edit: ", e);
-            showInfoModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการย้ายข้อมูลเพื่อแก้ไข!", true);
-            tabs.delete(newTabId); 
-            return; 
-        }
-
-        renderTabs();
-        switchTab(newTabId);
-        
-        const statusDiv = document.getElementById('edit-status');
-        statusDiv.textContent = `กำลังแก้ไขรายการขาย ${saleToEdit.id}. เพิ่ม/ลบสินค้า แล้วกด "ชำระเงิน" เพื่อบันทึกใหม่`;
-        statusDiv.style.display = 'block';
-        document.getElementById('barcode-input').focus();
-    }
-
-    function showDeleteConfirmModal(id, isTab) {
-        const confirmBtn = document.getElementById('confirm-delete-btn');
-        const confirmText = document.getElementById('delete-confirm-text');
-
-        if (isTab) {
-             const tabData = tabs.get(id);
-             confirmText.textContent = `คุณแน่ใจหรือไม่ว่าต้องการปิดบิล '${tabData.name}'?`;
-             confirmBtn.onclick = () => {
-                 closeTab(id, false);
-                 hideDeleteConfirmModal();
-             };
-        } else {
-            const sale = salesHistory.find(s => s.firestoreId === id);
-            confirmText.textContent = `คุณแน่ใจหรือไม่ว่าต้องการลบรายการขาย ID: ${sale ? sale.id : id}? การกระทำนี้ไม่สามารถย้อนกลับได้`;
-            confirmBtn.onclick = () => executeDeleteSaleFromHistory(id);
-        }
-        
-        document.getElementById('delete-confirm-modal').style.display = 'flex';
-    }
-
-    function hideDeleteConfirmModal() {
-        document.getElementById('delete-confirm-modal').style.display = 'none';
-    }
-
-    async function executeDeleteSaleFromHistory(firestoreId) {
-        const docRef = getSalesHistoryDocRef(firestoreId);
-        hideDeleteConfirmModal(); 
-        if (!docRef) {
-            showInfoModal("ข้อผิดพลาด", "ยังไม่ได้เชื่อมต่อกับฐานข้อมูล กรุณารอสักครู่แล้วลองอีกครั้ง", true);
-            return;
-        }
-        try {
-            await window.firebase.deleteDoc(docRef);
-            console.log("Deleted sale record:", firestoreId);
-        } catch (e) {
-            console.error("Error deleting document: ", e);
-            showInfoModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการลบข้อมูล!", true);
-        }
-    }
-
-    function showClearOptionsModal() {
-        document.getElementById('clear-options-modal').style.display = 'flex';
-    }
-
-    function hideClearOptionsModal() {
-        document.getElementById('clear-options-modal').style.display = 'none';
-        document.getElementById('barcode-input').focus();
-    }
-
-    function clearHistoryLocally() {
-        salesHistory = [];
-        updateHistoryDisplay();
-        calculateSummaryForDisplayedHistory();
-        hideClearOptionsModal();
-        console.log("History cleared locally from the display.");
-    }
-
-    async function executeClearAllHistory() {
-        hideClearOptionsModal();
-        const salesCollection = getSalesHistoryCollectionRef();
-        if (!salesCollection) {
-            showInfoModal("ข้อผิดพลาด", "ยังไม่ได้เชื่อมต่อกับฐานข้อมูล กรุณารอสักครู่แล้วลองอีกครั้ง", true);
-            return;
-        }
-        try {
-            const querySnapshot = await window.firebase.getDocs(salesCollection);
-            const batch = window.firebase.writeBatch(window.db);
-            querySnapshot.forEach((doc) => {
-                batch.delete(doc.ref);
-            });
-            await batch.commit();
-            console.log("All sales history cleared from Firestore.");
-        } catch (e) {
-            console.error("Error clearing history: ", e);
-            showInfoModal("ข้อผิดพลาด", "เกิดข้อผิดพลาดในการล้างประวัติทั้งหมด!", true);
-        }
-    }
-
-    function updateHistoryDisplay() {
-        const historyBody = document.getElementById('history-body');
-        const clearHistoryBtn = document.getElementById('clear-all-history-btn');
-        
-        if (!historyBody) return;
-        historyBody.innerHTML = '';
-        if (salesHistory.length === 0) {
-            historyBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">ไม่พบประวัติการขาย</td></tr>';
-            if(clearHistoryBtn) clearHistoryBtn.disabled = true;
-            return;
-        }
-        if(clearHistoryBtn) clearHistoryBtn.disabled = false;
-
-        salesHistory.forEach((sale) => {
-            const row = historyBody.insertRow();
-            const itemDetails = sale.items.map(item => `${item['สินค้า']} (x${item.quantity})`).join('<br>');
-            const discountAmount = sale.discount ? sale.discount.toFixed(2) : '0.00';
-            row.innerHTML = `<td>${new Date(sale.timestamp).toLocaleString('th-TH')}</td><td>${sale.id}</td><td>${itemDetails}</td><td>${discountAmount}</td><td><strong>${sale.total.toFixed(2)}</strong></td><td style="white-space: nowrap;"><button class="edit-history-btn" onclick="editSaleRecord('${sale.firestoreId}')">แก้ไข</button><button class="delete-history-btn" onclick="showDeleteConfirmModal('${sale.firestoreId}', false)">ลบ</button></td>`;
-        });
-    }
-    
-    function filterHistoryByDate() {
-        const startDateInput = document.getElementById('start-date').value;
-        const endDateInput = document.getElementById('end-date').value;
-
-        if (!startDateInput || !endDateInput) {
-            showInfoModal("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกทั้งวันที่เริ่มต้นและวันที่สิ้นสุด", false);
-            return;
-        }
-
-        const startDate = new Date(startDateInput);
-        startDate.setHours(0, 0, 0, 0);
-
-        const endDate = new Date(endDateInput);
-        endDate.setHours(23, 59, 59, 999);
-
-        loadSalesHistoryFromFirestore(startDate.toISOString(), endDate.toISOString());
-    }
-
-
-    function loadSalesHistoryFromFirestore(startDate, endDate) {
-        const historyCollectionRef = getSalesHistoryCollectionRef();
-        if (!historyCollectionRef) return;
-
-        if (unsubscribeSalesHistory) {
-            unsubscribeSalesHistory();
-        }
-
-        const { query, where } = window.firebase;
-        
-        let q;
-        if (startDate && endDate) {
-            document.getElementById('summary-title').textContent = `สรุปยอดขายของ ${window.userId} (ตามช่วงเวลา)`;
-            q = query(historyCollectionRef, 
-                where("timestamp", ">=", startDate), 
-                where("timestamp", "<=", endDate)
-            );
-        } else {
-             document.getElementById('summary-title').textContent = `สรุปยอดขายของ ${window.userId}`;
-            q = query(historyCollectionRef);
-        }
-
-        unsubscribeSalesHistory = window.firebase.onSnapshot(q, (querySnapshot) => {
-            const newHistory = [];
-            querySnapshot.forEach((doc) => {
-                newHistory.push({ ...doc.data(), firestoreId: doc.id });
-            });
-            salesHistory = newHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)); 
-            updateHistoryDisplay();
-            calculateSummaryForDisplayedHistory();
-        }, (error) => {
-            console.error("Error loading sales history:", error);
-            if (error.code === 'failed-precondition') {
-                showInfoModal("ข้อผิดพลาด Firestore", "Firestore ต้องการ Index เพื่อทำการค้นหาตามช่วงวันที่\n\nวิธีแก้ไข (สำหรับนักพัฒนา):\n1. ดูที่ Console Log ของเบราว์เซอร์\n2. Firestore จะแสดงลิงก์สำหรับสร้าง Index ที่ต้องการโดยอัตโนมัติ\n3. คลิกลิงก์นั้นเพื่อไปที่ Firebase Console และสร้าง Index\n4. รอประมาณ 2-3 นาทีให้ Index สร้างเสร็จแล้วลองอีกครั้ง", true);
-            } else if (error.code === 'permission-denied') {
-                 showInfoModal("ข้อผิดพลาด Firestore", "การเชื่อมต่อ Firestore ล้มเหลว! (permission-denied)\n\nสาเหตุอาจเกิดจาก Security Rules ของคุณไม่อนุญาตให้อ่านข้อมูล\n\nวิธีแก้ไข:\n1. ไปที่ Firebase Console > Firestore Database > แท็บ 'Rules'\n2. ตรวจสอบว่าอนุญาตให้มีการอ่าน/เขียนข้อมูลหรือไม่ (สำหรับ test mode ควรเป็น: allow read, write: if request.auth != null;)", true);
-            }
-        });
-    }
-    
-    function loadAllSalesHistory() {
-        if (unsubscribeSalesHistory) {
-            unsubscribeSalesHistory();
-        }
-        
-        // This is a collection group query. It queries all collections named 'salesHistory'.
-        // IMPORTANT: This requires a composite index in Firestore. 
-        // The console will provide a link to create it automatically when this query fails for the first time.
-        const salesCollectionGroup = window.firebase.collectionGroup(window.db, 'salesHistory');
-        document.getElementById('summary-title').textContent = 'สรุปยอดขายทั้งหมด';
-
-        unsubscribeSalesHistory = window.firebase.onSnapshot(salesCollectionGroup, (querySnapshot) => {
-            const newHistory = [];
-            querySnapshot.forEach((doc) => {
-                newHistory.push({ ...doc.data(), firestoreId: doc.id });
-            });
-            salesHistory = newHistory.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            updateHistoryDisplay();
-            calculateSummaryForDisplayedHistory();
-        }, (error) => {
-            console.error("Error loading all sales history:", error);
-             if (error.code === 'failed-precondition') {
-                showInfoModal("ข้อผิดพลาด Firestore (Admin)", "การดึงข้อมูลทั้งหมดต้องการ Index พิเศษ\n\nวิธีแก้ไข (สำหรับนักพัฒนา):\n1. ดูที่ Console Log ของเบราว์เซอร์\n2. Firestore จะมีลิงก์สำหรับสร้าง Index ของ Collection Group 'salesHistory' โดยอัตโนมัติ\n3. คลิกลิงก์นั้นเพื่อสร้าง Index แล้วลองอีกครั้ง", true);
-            } else {
-                 showInfoModal("ข้อผิดพลาด", "ไม่สามารถดึงข้อมูลประวัติการขายทั้งหมดได้", true);
-            }
-        });
-    }
-
-    // --- DAILY SUMMARY ---
-    function calculateSummaryForDisplayedHistory() {
-        const displayedSales = salesHistory; 
-        
-        const totalSales = displayedSales.reduce((sum, sale) => sum + (sale.subtotal || 0), 0);
-        const totalDiscount = displayedSales.reduce((sum, sale) => sum + (sale.discount || 0), 0);
-        const netSales = displayedSales.reduce((sum, sale) => sum + (sale.total || 0), 0);
-        const billCount = displayedSales.length;
-
-        document.getElementById('summary-total-sales').textContent = totalSales.toFixed(2);
-        document.getElementById('summary-total-discount').textContent = totalDiscount.toFixed(2);
-        document.getElementById('summary-net-sales').textContent = netSales.toFixed(2);
-        document.getElementById('summary-bill-count').textContent = billCount;
-    }
-    
-    async function generateSaleId() {
-        const { query, where, getCountFromServer } = window.firebase;
-        const salesCollectionRef = getSalesHistoryCollectionRef();
-        if (!salesCollectionRef) return `Error-${Date.now()}`;
-
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = (today.getMonth() + 1).toString().padStart(2, '0');
-        const day = today.getDate().toString().padStart(2, '0');
-        const datePrefix = `${year}${month}${day}`;
-
-        const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-        const endOfDay = new Date(new Date().setHours(23, 59, 59, 999)).toISOString();
-
-        const q = query(salesCollectionRef, where("timestamp", ">=", startOfDay), where("timestamp", "<=", endOfDay));
-        
-        const snapshot = await getCountFromServer(q);
-        const todayCount = snapshot.data().count;
-        
-        const nextSequence = todayCount + 1;
-        return `${datePrefix}-${nextSequence.toString().padStart(4, '0')}`;
-    }
-
-    // --- EXPORT ---
-    function getHistoryForExport() {
-        return salesHistory.flatMap(sale => 
-            sale.items.map(item => ({
-                'รหัสการขาย': sale.id, 'วันที่': new Date(sale.timestamp).toLocaleDateString('th-TH'),
-                'เวลา': new Date(sale.timestamp).toLocaleTimeString('th-TH'), 
-                'ยอดรวมก่อนลด': sale.subtotal ? sale.subtotal.toFixed(2) : '0.00',
-                'ส่วนลด': sale.discount ? sale.discount.toFixed(2) : '0.00',
-                'ยอดสุทธิ': sale.total ? sale.total.toFixed(2) : '0.00',
-                'รหัสสินค้า': item['รหัสสินค้า'],
-                'สินค้า': item['สินค้า'], 
-                'หน่วย': item['หน่วย'], 
-                'จำนวน': item.quantity,
-                'ราคาต่อหน่วย': parseFloat(item['ราคา']), 
-                'ราคารวม (รายการนี้)': item['ราคา'] * item.quantity,
-                'ผู้ใช้': sale.user || '' // Include user if available
-            }))
-        );
-    }
-
-    function exportToExcel() {
-        const dataToExport = getHistoryForExport();
-        if (dataToExport.length === 0) {
-            showInfoModal("ไม่มีข้อมูล", "ไม่มีข้อมูลประวัติการขายให้ Export", false);
-            return;
-        }
-        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'ประวัติการขาย');
-        worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15}, {wch:15} ];
-        XLSX.writeFile(workbook, `pos-history-${new Date().toISOString().split('T')[0]}.xlsx`);
-    }
-
-    // --- TAB MANAGEMENT ---
-    function addNewSaleTab() {
-        if (tabs.size >= 5) {
-            showInfoModal("ไม่สามารถเปิดบิล", "ไม่สามารถเปิดบิลใหม่ได้เกิน 5 บิล", false);
-            return;
-        }
-        
-        let nextSaleNumber = 1;
-        const usedNumbers = Array.from(tabs.values()).map(t => t.name ? parseInt(t.name.split(' ')[1]) : 0);
-        while(usedNumbers.includes(nextSaleNumber)) {
-            nextSaleNumber++;
-        }
-
-        const tabId = 'sale-' + Date.now();
-        tabs.set(tabId, {
-            cart: [],
-            discount: 0,
-            name: `บิล ${nextSaleNumber}`,
-        });
-        renderTabs();
-        switchTab(tabId);
-    }
-
-    function switchTab(tabId) {
-        if (!tabs.has(tabId)) return;
-        activeTabId = tabId;
-        renderTabs();
-        updateCartDisplay();
-        document.getElementById('barcode-input').focus();
-    }
-
-    function closeTab(tabId, confirm = true) {
-        const tabData = tabs.get(tabId);
-        if (!tabData) return;
-
-        if (confirm && tabData.cart.length > 0) {
-            showDeleteConfirmModal(tabId, true);
-            return;
-        }
-        
-        tabs.delete(tabId);
-        
-        if (activeTabId === tabId) {
-            const remainingTabs = Array.from(tabs.keys());
-            if (remainingTabs.length > 0) {
-                switchTab(remainingTabs[0]);
-            } else {
-                addNewSaleTab();
-            }
-        }
-        
-        renderTabs();
-    }
-
-    function renderTabs() {
-        const tabsContainer = document.getElementById('cart-tabs');
-        if (!tabsContainer) return;
-        tabsContainer.innerHTML = '';
-        tabs.forEach((data, id) => {
-            const tabButton = document.createElement('button');
-            tabButton.className = 'tab-button';
-            tabButton.textContent = data.name;
-            tabButton.onclick = () => switchTab(id);
-
-            if (id === activeTabId) {
-                tabButton.classList.add('active');
             }
             
-            if (tabs.size > 1) {
-                const closeButton = document.createElement('button');
-                closeButton.className = 'close-tab-btn';
-                closeButton.innerHTML = '&times;';
-                closeButton.onclick = (e) => {
-                    e.stopPropagation(); 
-                    closeTab(id);
-                };
-                tabButton.appendChild(closeButton);
+            async function getSheetPreferences() {
+                const user = auth.currentUser;
+                if (!user) return { order: [], hidden: [] };
+                const gid = state.activeTab ? state.activeTab.dataset.gid : 'default';
+                const docRef = doc(db, "user_preferences", user.uid);
+                try {
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        return data[gid] || { order: [], hidden: [] };
+                    }
+                    return { order: [], hidden: [] };
+                } catch (e) {
+                    console.error("Error getting sheet preferences:", e);
+                    return { order: [], hidden: [] };
+                }
             }
 
-            tabsContainer.appendChild(tabButton);
+            async function saveSheetPreference(preference) {
+                const user = auth.currentUser;
+                if (!user) return;
+                const gid = state.activeTab ? state.activeTab.dataset.gid : 'default';
+                const docRef = doc(db, "user_preferences", user.uid);
+                try {
+                    await setDoc(docRef, { [gid]: preference }, { merge: true });
+                } catch (e) {
+                    console.error("Error saving sheet preferences:", e);
+                }
+            }
+
+            function handleTableClick(e) {
+                const button = e.target.closest('.plus-btn, .minus-btn');
+                if (button) {
+                    const productId = button.dataset.id;
+                    const change = button.classList.contains('plus-btn') ? 1 : -1;
+                    updateProductQuantity(productId, change);
+                    return;
+                }
+
+                const row = e.target.closest('tr');
+                if (row && !e.target.closest('.order-cell, .drag-handle-cell')) {
+                    ui.tableOutput.querySelectorAll('tr.selected-row').forEach(r => r.classList.remove('selected-row'));
+                    row.classList.add('selected-row');
+                }
+            }
+            
+            async function handleTableRowDoubleClick(e) {
+                const targetCell = e.target.closest('td');
+                if (!targetCell || targetCell.classList.contains('order-cell') || targetCell.classList.contains('drag-handle-cell')) return;
+                const rowToHide = targetCell.parentElement;
+                const productId = rowToHide.dataset.id;
+                if (rowToHide && rowToHide.tagName === 'TR' && productId) {
+                    rowToHide.classList.add('hidden');
+                    const prefs = await getSheetPreferences();
+                    if (!(prefs.hidden || []).includes(productId)) {
+                        prefs.hidden = [...(prefs.hidden || []), productId];
+                        await saveSheetPreference({ order: prefs.order || [], hidden: prefs.hidden });
+                    }
+                    updateShowHiddenButton();
+                }
+            }
+
+            async function showAllHiddenRows() {
+                const prefs = await getSheetPreferences();
+                const hiddenItems = prefs.hidden || [];
+                ui.tableOutput.querySelectorAll('tbody tr').forEach(row => {
+                    if (hiddenItems.includes(row.dataset.id)) row.classList.remove('hidden');
+                });
+                await saveSheetPreference({ order: prefs.order || [], hidden: [] });
+                updateShowHiddenButton();
+            }
+
+            async function updateShowHiddenButton() {
+                const prefs = await getSheetPreferences();
+                const hiddenCount = prefs.hidden ? prefs.hidden.length : 0;
+                if (hiddenCount > 0) {
+                    ui.showHiddenButton.textContent = `แสดง ${hiddenCount} รายการที่ซ่อน`;
+                    ui.showHiddenButton.classList.remove('hidden');
+                } else {
+                    ui.showHiddenButton.classList.add('hidden');
+                }
+            }
+
+            function handleCartButtonClick(e) {
+                 const target = e.target.closest('.cart-plus-btn, .cart-minus-btn');
+                if (!target) return;
+                const productId = target.dataset.id;
+                const change = target.classList.contains('cart-plus-btn') ? 1 : -1;
+                updateProductQuantity(productId, change);
+            }
+            
+            function updateProductQuantity(productId, change) {
+                updateCart(productId, change);
+                const item = state.cart.get(productId);
+                const newQuantity = item ? item.quantity : 0;
+                const tableQuantitySpan = document.querySelector(`.quantity-display[data-id="${productId}"]`);
+                if (tableQuantitySpan) tableQuantitySpan.textContent = newQuantity;
+            }
+
+            function toggleCart(open) {
+                if (open) { ui.cart.overlay.classList.remove('hidden'); ui.cart.sidebar.classList.remove('translate-x-full'); } 
+                else { ui.cart.overlay.classList.add('hidden'); ui.cart.sidebar.classList.add('translate-x-full'); }
+            }
+            
+            function toggleModal(open) {
+                 if(open) { ui.modal.el.classList.add('flex'); ui.modal.el.classList.remove('hidden'); }
+                 else {
+                     ui.modal.el.classList.add('hidden');
+                     ui.modal.el.classList.remove('flex');
+                     currentlyViewedOrder = null;
+                 }
+            }
+
+            function updateCart(productId, change) {
+                const productData = state.currentSheetData.find(p => p[state.productIdentifierHeader] === productId);
+                if (!productData) return;
+                const unit = productData[state.unitHeader] || 'ชิ้น';
+                if (state.cart.has(productId)) {
+                    const item = state.cart.get(productId);
+                    item.quantity += change;
+                    if (item.quantity <= 0) state.cart.delete(productId);
+                    else state.cart.set(productId, item);
+                } else if (change > 0) {
+                    state.cart.set(productId, { name: productId, quantity: 1, unit: unit });
+                }
+                renderCart();
+            }
+
+            function renderCart() {
+                ui.cart.itemsContainer.innerHTML = '';
+                let totalItems = 0;
+                if (state.cart.size === 0) {
+                    ui.cart.itemsContainer.appendChild(ui.cart.emptyMessage);
+                    ui.cart.emptyMessage.classList.remove('hidden');
+                    ui.cart.confirmButton.disabled = true;
+                } else {
+                    ui.cart.emptyMessage.classList.add('hidden');
+                    ui.cart.confirmButton.disabled = false;
+                    const table = document.createElement('table');
+                    table.className = 'w-full text-sm cart-table';
+                    table.innerHTML = `<thead class="bg-slate-100"><tr><th class="font-semibold text-slate-600 w-12 text-center">ลำดับ</th><th class="font-semibold text-slate-600">สินค้า</th><th class="font-semibold text-slate-600 text-center w-28">จำนวน</th><th class="font-semibold text-slate-600 w-16">หน่วย</th></tr></thead><tbody></tbody>`;
+                    const tbody = table.querySelector('tbody');
+                    let index = 1;
+                    state.cart.forEach(item => {
+                        totalItems += item.quantity;
+                        const row = tbody.insertRow();
+                        row.innerHTML = `<td class="text-center">${index++}</td><td class="font-semibold">${item.name}</td><td class="text-center"><div class="flex items-center justify-center"><button class="cart-minus-btn inline-flex items-center justify-center w-6 h-6 text-sm font-bold text-red-600 bg-red-100 rounded-full hover:bg-red-200" data-id="${item.name}">-</button><span class="font-bold text-base mx-2 w-8 text-center">${item.quantity}</span><button class="cart-plus-btn inline-flex items-center justify-center w-6 h-6 text-sm font-bold text-green-600 bg-green-100 rounded-full hover:bg-green-200" data-id="${item.name}">+</button></div></td><td>${item.unit}</td>`;
+                    });
+                    ui.cart.itemsContainer.appendChild(table);
+                }
+                ui.cart.totalQuantityEl.textContent = `${totalItems} ชิ้น`;
+                if (totalItems > 0) { ui.cart.badge.textContent = totalItems; ui.cart.badge.classList.remove('hidden'); } 
+                else { ui.cart.badge.classList.add('hidden'); }
+            }
+
+            function clearCart() {
+                state.cart.clear();
+                document.querySelectorAll('.quantity-display').forEach(span => span.textContent = '0');
+                renderCart();
+                toggleModal(false);
+            }
+            
+            function showConfirmationModal(historyData = null) {
+                let orderId, items, totalItems;
+                ui.modal.dbStatus.innerHTML = '';
+                if (historyData) {
+                    currentlyViewedOrder = historyData;
+                    orderId = historyData.id;
+                    items = Array.isArray(historyData.items) ? historyData.items : [];
+                    totalItems = historyData.totalQuantity;
+                    ui.modal.dbStatus.innerHTML = `<i class="fas fa-check-circle text-green-500"></i> บันทึกในฐานข้อมูลแล้ว`;
+                } else {
+                    if (state.cart.size === 0) return;
+                    currentlyViewedOrder = null;
+                    const now = new Date();
+                    orderId = `RO-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}-${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+                    items = Array.from(state.cart.values());
+                    totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+                    const itemsForDb = items.map(item => ({ name: item.name, quantity: item.quantity, unit: item.unit }));
+                    saveRequestToFirestore(orderId, itemsForDb, totalItems);
+                }
+                ui.modal.orderIdDisplay.textContent = `เลขที่ใบเบิกของ: ${orderId}`;
+                const table = document.createElement('table');
+                table.className = 'w-full text-sm';
+                table.innerHTML = `<thead class="border-b"><tr><th class="py-1 text-center font-semibold w-12">ลำดับ</th><th class="py-1 text-left font-semibold">สินค้า</th><th class="py-1 text-center font-semibold">จำนวน</th><th class="py-1 text-left font-semibold">หน่วย</th></tr></thead><tbody></tbody>`;
+                const tbody = table.querySelector('tbody');
+                let index = 1;
+                items.forEach(item => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `<td class="py-1 text-center">${index++}</td><td class="py-1">${item.name}</td><td class="py-1 text-center">${item.quantity}</td><td class="py-1">${item.unit}</td>`;
+                });
+                ui.modal.orderDetails.innerHTML = '';
+                ui.modal.orderDetails.appendChild(table);
+                ui.modal.orderTotalQuantity.textContent = `${totalItems} ชิ้น`;
+                toggleModal(true);
+            }
+            
+            async function saveRequestToFirestore(orderId, items, totalQuantity) {
+                if (!auth.currentUser) { ui.modal.dbStatus.textContent = "ข้อผิดพลาด: ไม่ได้เชื่อมต่อฐานข้อมูล"; return; }
+                ui.modal.dbStatus.textContent = "กำลังบันทึกข้อมูล...";
+                try {
+                    const requestData = { id: orderId, createdAt: serverTimestamp(), totalQuantity: totalQuantity, items: items, user: auth.currentUser.uid, };
+                    await setDoc(doc(db, "requests", orderId), requestData);
+                    ui.modal.dbStatus.innerHTML = `<i class="fas fa-check-circle text-green-500"></i> บันทึกในฐานข้อมูลแล้ว`;
+                } catch (error) { ui.modal.dbStatus.textContent = "เกิดข้อผิดพลาดในการบันทึก"; }
+            }
+
+            async function saveOrderAsPng() {
+                const button = ui.modal.savePngButton;
+                const originalText = button.innerHTML;
+                button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> กำลังบันทึก...`;
+                button.disabled = true;
+                try {
+                    const canvas = await html2canvas(ui.modal.summaryContent, { scale: 2, backgroundColor: '#ffffff' });
+                    const link = document.createElement('a');
+                    link.download = `${ui.modal.orderIdDisplay.textContent.replace(':', '')}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                } catch(err) { alert("เกิดข้อผิดพลาดในการบันทึกรูปภาพ"); } 
+                finally { button.innerHTML = originalText; button.disabled = false; }
+            }
+
+            function shareOrderToLine() {
+                const orderIdText = ui.modal.orderIdDisplay.textContent;
+                let shareText = `*${orderIdText}*\n--------------------\n`;
+                let totalItems = 0;
+                let itemsToShare = [];
+                if (currentlyViewedOrder) {
+                    itemsToShare = Array.isArray(currentlyViewedOrder.items) ? currentlyViewedOrder.items : [];
+                } else {
+                    itemsToShare = Array.from(state.cart.values());
+                }
+                itemsToShare.forEach(item => {
+                    totalItems += (item.quantity || 0);
+                    shareText += `• ${item.name} (จำนวน: ${item.quantity || 0} ${item.unit || 'ชิ้น'})\n`;
+                });
+                shareText += `--------------------\n*จำนวนเบิกสุทธิ: ${totalItems} ชิ้น*`;
+                const encodedText = encodeURIComponent(shareText);
+                window.open(`https://line.me/R/msg/text/?${encodedText}`, '_blank');
+            }
+            
+            async function loadSheet(tabElement) {
+                ui.loading.classList.remove('hidden');
+                ui.tableOutput.innerHTML = '';
+                ui.error.el.classList.add('hidden');
+                if (ui.tableInfo) {
+                    ui.tableInfo.textContent = 'กำลังโหลดข้อมูล...';
+                }
+                if(state.activeTab) {
+                    state.activeTab.classList.remove('bg-white', 'text-indigo-600', 'border-indigo-500');
+                    state.activeTab.classList.add('border-transparent');
+                }
+                
+                tabElement.classList.add('bg-white', 'text-indigo-600', 'border-indigo-500');
+                tabElement.classList.remove('border-transparent');
+                state.activeTab = tabElement;
+                const url = `${BASE_URL}&gid=${tabElement.dataset.gid}`;
+                await renderTableWithPapaParse(url);
+            }
+            
+            async function renderTableWithPapaParse(url) {
+                const prefs = await getSheetPreferences();
+                const savedOrder = prefs.order || [];
+                const hiddenItems = prefs.hidden || [];
+                
+                Papa.parse(url, {
+                    download: true, header: true, skipEmptyLines: true, dynamicTyping: true,
+                    complete: function(results) {
+                        if (results.errors.length > 0) { throw new Error(`เกิดข้อผิดพลาดในการแปลง CSV: ${results.errors[0].message}`); }
+                        
+                        const headers = results.meta.fields;
+                        let parsedData = results.data;
+                        state.productIdentifierHeader = headers[0];
+                        state.unitHeader = headers.find(h => h.toLowerCase().includes('หน่วย')) || headers[2];
+                        
+                        if (savedOrder.length > 0) {
+                            const orderedData = savedOrder.map(id => parsedData.find(p => p && p[state.productIdentifierHeader] === id)).filter(Boolean);
+                            const newItems = parsedData.filter(p => p && !savedOrder.includes(p[state.productIdentifierHeader]));
+                            parsedData = [...orderedData, ...newItems];
+                        }
+                        state.currentSheetData = parsedData;
+
+                        if (state.currentSheetData.length === 0 || !headers || headers.length === 0) {
+                            ui.tableOutput.innerHTML = '<p class="text-center p-8 text-slate-500">ไม่พบข้อมูลในชีทนี้</p>';
+                            if (ui.tableInfo) ui.tableInfo.textContent = 'ชีทนี้ว่างเปล่า';
+                            ui.loading.classList.add('hidden');
+                            return;
+                        }
+                        
+                        const table = document.createElement('table');
+                        table.className = 'min-w-full';
+                        const thead = document.createElement('thead');
+                        const headerRow = document.createElement('tr');
+                        const displayHeaders = headers.filter(h => !h.toLowerCase().includes('ราคา'));
+                        
+                        headerRow.innerHTML = `<th class="px-2 py-3 w-8"></th>` + 
+                            displayHeaders.map(h => `<th class="px-3 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider sm:px-6">${h}</th>`).join('') +
+                            `<th class="px-3 py-3 text-center text-xs font-medium text-slate-500 uppercase tracking-wider sm:px-6">เบิกของ</th>`;
+                        thead.appendChild(headerRow);
+                        table.appendChild(thead);
+
+                        const tbody = document.createElement('tbody');
+                        tbody.id = "product-table-body";
+                        tbody.className = "bg-white divide-y divide-slate-200";
+                        state.currentSheetData.forEach(rowObject => {
+                            const productId = rowObject[state.productIdentifierHeader];
+                            if(!productId) return;
+                            const tr = document.createElement('tr');
+                            tr.dataset.id = productId;
+                            if (hiddenItems.includes(productId)) tr.classList.add('hidden');
+
+                            const itemInCart = state.cart.get(productId);
+                            tr.innerHTML = `<td class="px-2 py-1.5 text-center text-slate-400 drag-handle-cell"><i class="fas fa-grip-vertical drag-handle"></i></td>` +
+                                displayHeaders.map(header => `<td class="px-3 py-1.5 whitespace-nowrap text-sm text-slate-700 sm:px-6">${rowObject[header] ?? ''}</td>`).join('') +
+                                `<td class="px-3 py-1.5 whitespace-nowrap text-sm text-slate-700 order-cell sm:px-6">
+                                    <div class="flex items-center justify-center order-controls">
+                                        <button class="minus-btn inline-flex items-center justify-center w-6 h-6 text-sm font-bold text-indigo-600 bg-indigo-100 rounded-full hover:bg-indigo-200 focus:outline-none" data-id="${productId}">-</button>
+                                        <span class="quantity-display font-bold text-base mx-2 w-8 text-center" data-id="${productId}">${itemInCart ? itemInCart.quantity : '0'}</span>
+                                        <button class="plus-btn inline-flex items-center justify-center w-6 h-6 text-sm font-bold text-indigo-600 bg-indigo-100 rounded-full hover:bg-indigo-200 focus:outline-none" data-id="${productId}">+</button>
+                                    </div>
+                                </td>`;
+                            tbody.appendChild(tr);
+                        });
+                        table.appendChild(tbody);
+                        ui.tableOutput.innerHTML = '';
+                        ui.tableOutput.appendChild(table);
+
+                        new Sortable(tbody, {
+                            animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost', dragClass: 'sortable-drag',
+                            onEnd: async function (evt) {
+                                const newOrder = Array.from(evt.to.children).map(tr => tr.dataset.id);
+                                const prefs = await getSheetPreferences();
+                                prefs.order = newOrder;
+                                await saveSheetPreference(prefs);
+                            },
+                        });
+
+                        if (ui.tableInfo) ui.tableInfo.textContent = `แสดงข้อมูล ${state.currentSheetData.length} รายการ`;
+                        ui.loading.classList.add('hidden');
+                        updateShowHiddenButton();
+                    },
+                    error: function(error) {
+                        ui.error.text.textContent = "ไม่สามารถดาวน์โหลดข้อมูลจากชีทได้";
+                        ui.error.el.classList.remove('hidden');
+                        if (ui.tableInfo) ui.tableInfo.textContent = 'ไม่สามารถโหลดข้อมูลได้';
+                        ui.loading.classList.add('hidden');
+                    }
+                });
+            }
+
+            function createSheetTabs() {
+                ui.sheetTabsContainer.innerHTML = ''; // Clear existing tabs
+                sheets.forEach((sheet, index) => {
+                    const tab = document.createElement('button');
+                    tab.textContent = sheet.name;
+                    // MODIFIED: Added divider logic within the class
+                    tab.className = 'sheet-tab px-3 sm:px-4 py-2 text-sm font-semibold text-slate-600 border-b-4 border-transparent hover:text-indigo-600 whitespace-nowrap border-l border-slate-200 first:border-l-0';
+                    tab.dataset.gid = sheet.gid;
+                    tab.addEventListener('click', () => loadSheet(tab));
+                    ui.sheetTabsContainer.appendChild(tab);
+                });
+            }
         });
-    }
-
-    function navigateTabs(direction) {
-        const tabKeys = Array.from(tabs.keys());
-        if(tabKeys.length <= 1) return;
-
-        let currentIndex = tabKeys.indexOf(activeTabId);
-        currentIndex += direction;
-
-        if (currentIndex >= tabKeys.length) {
-            currentIndex = 0;
-        } else if (currentIndex < 0) {
-            currentIndex = tabKeys.length - 1;
-        }
-        
-        switchTab(tabKeys[currentIndex]);
-    }
-
-</script>
-
+    </script>
 </body>
 </html>
