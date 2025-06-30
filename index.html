@@ -809,7 +809,7 @@
         // --- AUTH & USER MGMT ---
         handleLogin() {
             const username = document.getElementById('username-input').value.trim();
-            const password = document.getElementById('password-input').value;
+            const password = document.getElementById('password-input').value.trim(); // Added .trim() to fix potential space issue
             
             if (this.config.users[username] && this.config.users[username] === password) {
                 sessionStorage.setItem('posUsername', username);
