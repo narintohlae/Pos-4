@@ -429,15 +429,6 @@
             <section class="card">
                 <h2>ประวัติการขาย</h2>
     
-                <!-- Date Filter Section -->
-                <div class="filter-section" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
-                    <label for="start-date">ตั้งแต่วันที่:</label>
-                    <input type="date" id="start-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
-                    <label for="end-date">ถึงวันที่:</label>
-                    <input type="date" id="end-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
-                    <button id="filter-history-btn" style="flex-grow: 0;">ค้นหา</button>
-                </div>
-    
                 <div class="button-group" style="justify-content: flex-start; margin-bottom: 1rem;">
                     <button id="export-excel-btn" style="flex-grow: 0;">Export to Excel</button>
                     <button id="clear-all-history-btn" class="clear-cart" style="flex-grow: 0; margin-left: auto;">ล้างประวัติทั้งหมด</button>
@@ -518,7 +509,6 @@
         </div>
     </div>
 
-
     <!-- Firebase SDK -->
     <script type="module">
         // Import necessary functions from Firebase SDK
@@ -526,37 +516,37 @@
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, getDocs, query, where, getCountFromServer, setDoc, updateDoc, collectionGroup, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- SECURE FIREBASE INITIALIZATION ---
-        try {
-            // Use environment variables provided by the platform
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-pos-app';
+        // --- FIREBASE INITIALIZATION ---
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        const firebaseConfig = {
+          apiKey: "AIzaSyBpIqF9_jI_5eWuU4wBRnDYGwGOaUdhTVU",
+          authDomain: "pos-4-4c063.firebaseapp.com",
+          projectId: "pos-4-4c063",
+          storageBucket: "pos-4-4c063.firebasestorage.app",
+          messagingSenderId: "838112126727",
+          appId: "1:838112126727:web:d4426eff68f65443c107a2",
+          measurementId: "G-7K1YSVKD7R"
+        };
 
-            if (!firebaseConfig) {
-                throw new Error("Firebase configuration is missing.");
-            }
+        try {
+            const appId = firebaseConfig.projectId; // Use projectId from the user's config
 
             // Initialize Firebase
             const app = initializeApp(firebaseConfig);
             const db = getFirestore(app);
             const auth = getAuth(app);
-            setLogLevel('debug'); // Enable detailed logging for debugging
+            setLogLevel('debug');
 
             // --- AUTHENTICATION ---
-            // Sign in using the provided custom token, or fall back to anonymous sign-in.
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                 await signInWithCustomToken(auth, __initial_auth_token);
-                 console.log("Successfully signed in with custom token.");
-            } else {
-                 await signInAnonymously(auth);
-                 console.log("Signed in anonymously as no custom token was provided.");
-            }
+            // Always sign in anonymously as login system is removed
+            await signInAnonymously(auth);
+            console.log("Signed in anonymously.");
             
             // Expose Firebase services to the main application script via the window object
             window.firebaseServices = {
                 db,
                 auth,
-                appId,
+                appId, // Use the one from the config
                 api: {
                     collection, onSnapshot, addDoc, doc, deleteDoc, writeBatch, 
                     getDocs, query, where, getCountFromServer, setDoc, updateDoc, collectionGroup
@@ -565,18 +555,16 @@
 
         } catch (error) {
             console.error("Firebase Initialization Failed:", error);
-            // Set a global flag to indicate failure
             window.firebaseFailed = true;
             window.firebaseError = error.message;
         } finally {
-            // Signal that Firebase setup is complete (either success or fail)
             window.firebaseReady = true;
         }
     </script>
 
     <script>
     // ===================================================================================
-    // --- POS APPLICATION LOGIC (Encapsulated) ---
+    // --- POS APPLICATION LOGIC (Encapsulated & Online) ---
     // ===================================================================================
     const POS_APP = {
         // --- CONFIGURATION & STATE ---
@@ -640,7 +628,6 @@
         },
 
         setupEventListeners() {
-            // Use .bind(this) to ensure 'this' refers to POS_APP inside event handlers
             document.getElementById('barcode-input').addEventListener('input', this.handleInstantSearch.bind(this));
             document.getElementById('barcode-input').addEventListener('keydown', this.handleSearchKeyDown.bind(this));
             
@@ -655,7 +642,6 @@
             document.querySelector('.finish-sale').addEventListener('click', this.showPaymentModal.bind(this));
             document.querySelector('.clear-cart').addEventListener('click', this.clearCart.bind(this));
             
-            document.getElementById('filter-history-btn').addEventListener('click', this.filterHistoryByDate.bind(this));
             document.getElementById('export-excel-btn').addEventListener('click', this.exportToExcel.bind(this));
             document.getElementById('clear-all-history-btn').addEventListener('click', this.showClearOptionsModal.bind(this));
             
@@ -688,8 +674,8 @@
                 console.error("App ID not available for Firestore query.");
                 return null;
             }
-            // All data is now stored in a public path
-            return api.collection(db, `artifacts/${appId}/public_data/salesHistory`);
+            // Corrected public path with odd number of segments
+            return api.collection(db, `artifacts/${appId}/public/data/salesHistory`);
         },
 
         getSalesHistoryDocRef(firestoreId) {
@@ -698,8 +684,8 @@
                 console.error("App ID or Document ID not available for Firestore query.");
                 return null;
             }
-             // All data is now stored in a public path
-            return api.doc(db, `artifacts/${appId}/public_data/salesHistory`, firestoreId);
+             // Corrected public path
+            return api.doc(db, `artifacts/${appId}/public/data/salesHistory`, firestoreId);
         },
         
         // --- MODAL & NOTIFICATION SYSTEM ---
@@ -734,6 +720,38 @@
         },
 
         // --- KEYBOARD HANDLING ---
+        handleCartItemKeyDown(e, type, index) {
+            if (e.key !== 'Enter') return;
+
+            e.preventDefault();
+            e.target.blur(); // Trigger onchange to update value before moving focus
+
+            setTimeout(() => {
+                const rowElement = e.target.closest('li');
+                if (!rowElement) return;
+
+                if (type === 'qty') {
+                    const nextInput = rowElement.querySelector(`#price-input-${index}`);
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                } else if (type === 'price') {
+                    const nextInput = rowElement.querySelector(`#total-input-${index}`);
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                    }
+                } else if (type === 'total') {
+                    const discountInput = document.getElementById('discount-input');
+                    if (discountInput) {
+                        discountInput.focus();
+                        discountInput.select();
+                    }
+                }
+            }, 50); // A small delay ensures the blur event has time to process.
+        },
+
         handleSearchKeyDown(e) {
             if (e.key === 'Enter') { 
                 e.preventDefault();
@@ -995,14 +1013,14 @@
                     <div class="col-seq">${index + 1}.</div>
                     <div class="col-name"><strong>${item['สินค้า']}</strong></div>
                     <div class="col-qty">
-                        <input type="text" inputmode="numeric" class="item-input" value="${item.quantity}" onchange="POS_APP.editItemQuantity(${index}, this.value)" onfocus="this.select()">
+                        <input type="text" inputmode="numeric" class="item-input" id="qty-input-${index}" value="${item.quantity}" onchange="POS_APP.editItemQuantity(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'qty', ${index})">
                         <span class="item-unit" style="font-size: 0.9em; white-space: nowrap;">${item['หน่วย'] || ''}</span>
                     </div>
                     <div class="col-price col-right">
-                         <input type="text" inputmode="decimal" class="item-input" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="POS_APP.editItemPrice(${index}, this.value)" onfocus="this.select()">
+                         <input type="text" inputmode="decimal" class="item-input" id="price-input-${index}" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="POS_APP.editItemPrice(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'price', ${index})">
                     </div>
                     <div class="col-total col-right">
-                        <input type="text" inputmode="decimal" class="item-input" value="${((item['ราคา'] || 0) * item.quantity).toFixed(2)}" onchange="POS_APP.editItemTotalPrice(${index}, this.value)" onfocus="this.select()">
+                        <input type="text" inputmode="decimal" class="item-input" id="total-input-${index}" value="${((item['ราคา'] || 0) * item.quantity).toFixed(2)}" onchange="POS_APP.editItemTotalPrice(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'total', ${index})">
                     </div>
                     <div class="col-delete col-center">
                         <button class="delete-item-btn" onclick="POS_APP.deleteItemFromCart(${index})">&times;</button>
@@ -1196,7 +1214,7 @@
                      this.closeTab(id, false);
                      this.hideDeleteConfirmModal();
                  };
-            } else {
+            } else { // It's a history item, id is the firestoreId
                 const sale = this.state.salesHistory.find(s => s.firestoreId === id);
                 confirmText.textContent = `คุณแน่ใจหรือไม่ว่าต้องการลบรายการขาย ID: ${sale ? sale.id : id}? การกระทำนี้ไม่สามารถย้อนกลับได้`;
                 confirmBtn.onclick = () => this.executeDeleteSaleFromHistory(id);
@@ -1284,26 +1302,7 @@
             });
         },
         
-        filterHistoryByDate() {
-            const startDateInput = document.getElementById('start-date').value;
-            const endDateInput = document.getElementById('end-date').value;
-
-            if (!startDateInput || !endDateInput) {
-                this.showInfoModal("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกทั้งวันที่เริ่มต้นและวันที่สิ้นสุด", false);
-                return;
-            }
-
-            const startDate = new Date(startDateInput);
-            startDate.setHours(0, 0, 0, 0);
-
-            const endDate = new Date(endDateInput);
-            endDate.setHours(23, 59, 59, 999);
-
-            this.loadSalesHistoryFromFirestore(startDate.toISOString(), endDate.toISOString());
-        },
-
-
-        loadSalesHistoryFromFirestore(startDate, endDate) {
+        loadSalesHistoryFromFirestore() {
             const historyCollectionRef = this.getSalesHistoryCollectionRef();
             if (!historyCollectionRef) return;
 
@@ -1311,18 +1310,10 @@
                 this.state.unsubscribeSalesHistory();
             }
 
-            const { query, where } = window.firebaseServices.api;
+            const { query } = window.firebaseServices.api;
             
-            let q;
-             document.getElementById('summary-title').textContent = `สรุปยอดขาย`;
-            if (startDate && endDate) {
-                q = query(historyCollectionRef, 
-                    where("timestamp", ">=", startDate), 
-                    where("timestamp", "<=", endDate)
-                );
-            } else {
-                q = query(historyCollectionRef);
-            }
+            let q = query(historyCollectionRef);
+            document.getElementById('summary-title').textContent = `สรุปยอดขาย`;
 
             this.state.unsubscribeSalesHistory = window.firebaseServices.api.onSnapshot(q, (querySnapshot) => {
                 const newHistory = [];
@@ -1334,10 +1325,8 @@
                 this.calculateSummaryForDisplayedHistory();
             }, (error) => {
                 console.error("Error loading sales history:", error);
-                if (error.code === 'failed-precondition') {
-                    this.showInfoModal("ข้อผิดพลาด Firestore", "Firestore ต้องการ Index เพื่อทำการค้นหาตามช่วงวันที่\n\nวิธีแก้ไข (สำหรับนักพัฒนา):\n1. ดูที่ Console Log ของเบราว์เซอร์\n2. Firestore จะแสดงลิงก์สำหรับสร้าง Index ที่ต้องการโดยอัตโนมัติ\n3. คลิกลิงก์นั้นเพื่อไปที่ Firebase Console และสร้าง Index\n4. รอประมาณ 2-3 นาทีให้ Index สร้างเสร็จแล้วลองอีกครั้ง", true);
-                } else if (error.code === 'permission-denied') {
-                     this.showInfoModal("ข้อผิดพลาด Firestore", "การเชื่อมต่อ Firestore ล้มเหลว! (permission-denied)\n\nสาเหตุอาจเกิดจาก Security Rules ของคุณไม่อนุญาตให้อ่านข้อมูล\n\nวิธีแก้ไข:\n1. ไปที่ Firebase Console > Firestore Database > แท็บ 'Rules'\n2. ตรวจสอบว่าอนุญาตให้มีการอ่าน/เขียนข้อมูลหรือไม่ (สำหรับ test mode ควรเป็น: allow read, write: if request.auth != null;)", true);
+                if (error.code === 'permission-denied') {
+                     this.showInfoModal("ข้อผิดพลาด Firestore", "การเชื่อมต่อ Firestore ล้มเหลว! (permission-denied)\n\nสาเหตุอาจเกิดจาก Security Rules ของคุณไม่อนุญาตให้อ่านข้อมูล\n\nวิธีแก้ไข:\n1. ไปที่ Firebase Console > Firestore Database > แท็บ 'Rules'\n2. ตรวจสอบว่าอนุญาตให้มีการอ่าน/เขียนข้อมูลหรือไม่ (สำหรับ test mode ควรเป็น: allow read, write: if true;)", true);
                 }
             });
         },
