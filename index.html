@@ -298,7 +298,6 @@
         .modal-content {
             background-color: var(--white-color); padding: 2rem; border-radius: 8px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 90%; max-width: 500px;
-            text-align: center;
         }
         .modal-content h3 { margin-top: 0; }
         .modal-content p {
@@ -307,18 +306,45 @@
             margin-bottom: 1.5rem;
         }
         
-        #cash-received-input {
-            width: 100%; padding: 0.75rem; text-align: right;
-            box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px;
-            margin-bottom: 1rem;
+        .payment-modal-body {
+            width: 100%;
+            margin-top: 1.5rem;
         }
-        
-        .payment-modal-body { text-align: center; }
-        .payment-modal-body .total-label { color: var(--secondary-color); font-size: 1.2rem; text-align: center; }
-        .payment-modal-body .total-amount { color: var(--primary-color); font-size: 3.2rem; font-weight: bold; margin: 0.5rem 0 1.5rem 0; }
-        .payment-modal-body .change-label { color: var(--secondary-color); font-size: 1.2rem; text-align: center; }
-        .payment-modal-body .change-amount { color: var(--success-color); font-size: 3.0rem; font-weight: bold; margin-top: 0.5rem; min-height: 48px; }
-        #cash-received-input { font-size: 2rem; }
+        .payment-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .payment-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .payment-label {
+            font-size: 1.2em;
+            color: var(--secondary-color);
+        }
+        .payment-amount {
+            font-weight: bold;
+        }
+        #payment-total-final {
+            font-size: 2em;
+            color: var(--primary-color);
+        }
+        #cash-received-input {
+            font-size: 1.2em;
+            text-align: right;
+            width: 50%;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+        #payment-change {
+            font-size: 2.5em;
+            color: var(--success-color);
+        }
 
         /* Tabs System */
         .cart-tabs-container {
@@ -476,14 +502,20 @@
         <!-- Payment Modal -->
         <div id="payment-modal" class="modal-overlay">
             <div class="modal-content">
+                <h3>ชำระเงิน</h3>
                 <div class="payment-modal-body">
-                    <p class="total-label">ยอดสุทธิที่ต้องชำระ</p>
-                    <p class="total-amount" id="payment-total-final">0.00</p>
-    
-                    <input type="number" id="cash-received-input" step="any" placeholder="จำนวนเงินที่รับมา">
-    
-                    <p class="change-label">เงินทอน</p>
-                    <p class="change-amount" id="payment-change">0.00</p>
+                    <div class="payment-row">
+                        <span class="payment-label">ยอดสุทธิที่ต้องชำระ</span>
+                        <span class="payment-amount" id="payment-total-final">0.00</span>
+                    </div>
+                     <div class="payment-row">
+                        <label for="cash-received-input" class="payment-label">รับเงินมา</label>
+                        <input type="number" id="cash-received-input" step="any" placeholder="0.00">
+                    </div>
+                     <div class="payment-row">
+                        <span class="payment-label">เงินทอน</span>
+                        <span class="payment-amount" id="payment-change">0.00</span>
+                    </div>
                 </div>
                 <div class="button-group" style="margin-top: 1.5rem; justify-content: center;">
                     <button id="confirm-sale-btn" class="finish-sale">ยืนยันการขาย (Enter)</button>
