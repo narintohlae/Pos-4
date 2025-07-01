@@ -58,6 +58,7 @@
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 0.5rem;
             margin-top: 0;
+            font-size: 18px; /* Adjusted font size */
         }
         
         .summary-grid {
@@ -93,7 +94,7 @@
         }
 
         .form-group {
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.35rem; /* Further reduced margin */
         }
 
         .form-group label {
@@ -171,7 +172,7 @@
 
         #cart-items li {
             background-color: #f1f3f5; padding: 0.75rem; border-radius: 4px;
-            margin-bottom: 0.5rem; 
+            margin-bottom: 0.25rem; /* Reduced margin by 50% */
             display: grid;
             grid-template-columns: 30px 1fr 120px 100px 110px 40px;
             align-items: center; 
@@ -381,7 +382,7 @@
                 <div class="pos-layout">
                     <!-- Search Column -->
                     <div class="search-column">
-                        <h2><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ค้นหาสินค้า</h2>
+                        <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ค้นหาสินค้า</h2>
                         <div class="form-group">
                             <label for="barcode-input">F2=บิลใหม่ | F5=ค้นหา | F8=ล้าง | F9=ชำระเงิน | F11=ส่วนลด | Del=ปิดบิล</label>
                             <input type="text" id="barcode-input" placeholder="ค้นหา... (เช่น: 3*1234.)" autofocus>
