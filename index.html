@@ -488,6 +488,17 @@
             <section class="card">
                 <h2>ประวัติการขาย</h2>
     
+                <div class="filter-section" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <label for="start-date">ตั้งแต่:</label>
+                    <input type="date" id="start-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <input type="time" id="start-time" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <label for="end-date">ถึง:</label>
+                    <input type="date" id="end-date" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <input type="time" id="end-time" style="padding: 5px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <button id="filter-history-btn" style="flex-grow: 0;">ค้นหา</button>
+                    <button id="today-history-btn" style="flex-grow: 0; background-color: var(--info-color);">วันนี้</button>
+                </div>
+
                 <div class="button-group" style="justify-content: flex-start; margin-bottom: 1rem;">
                     <button id="export-excel-btn" style="flex-grow: 0;">Export to Excel</button>
                     <button id="clear-all-history-btn" class="clear-cart" style="flex-grow: 0; margin-left: auto;">ล้างประวัติทั้งหมด</button>
@@ -709,6 +720,8 @@
             document.querySelector('.finish-sale').addEventListener('click', this.showPaymentModal.bind(this));
             document.querySelector('.clear-cart').addEventListener('click', this.clearCart.bind(this));
             
+            document.getElementById('filter-history-btn').addEventListener('click', this.filterHistoryByDateTime.bind(this));
+            document.getElementById('today-history-btn').addEventListener('click', this.filterHistoryForToday.bind(this));
             document.getElementById('export-excel-btn').addEventListener('click', this.exportToExcel.bind(this));
             document.getElementById('clear-all-history-btn').addEventListener('click', this.showClearOptionsModal.bind(this));
             
@@ -1408,7 +1421,41 @@
             this.updateHistoryDisplay();
         },
 
-        loadSalesHistoryFromFirestore() {
+        filterHistoryByDateTime() {
+            const startDateInput = document.getElementById('start-date').value;
+            const startTimeInput = document.getElementById('start-time').value;
+            const endDateInput = document.getElementById('end-date').value;
+            const endTimeInput = document.getElementById('end-time').value;
+
+            if (!startDateInput || !endDateInput) {
+                this.showInfoModal("ข้อมูลไม่ครบถ้วน", "กรุณาเลือกทั้งวันที่เริ่มต้นและวันที่สิ้นสุด", false);
+                return;
+            }
+
+            // Combine date and time, defaulting time if empty
+            const startDateTime = new Date(`${startDateInput}T${startTimeInput || '00:00:00'}`);
+            const endDateTime = new Date(`${endDateInput}T${endTimeInput || '23:59:59'}`);
+
+            this.loadSalesHistoryFromFirestore(startDateTime.toISOString(), endDateTime.toISOString());
+        },
+
+        filterHistoryForToday() {
+            const todayStart = new Date();
+            todayStart.setHours(0, 0, 0, 0);
+
+            const todayEnd = new Date();
+            todayEnd.setHours(23, 59, 59, 999);
+
+            // Set the input fields to reflect the "Today" filter
+            document.getElementById('start-date').value = todayStart.toISOString().split('T')[0];
+            document.getElementById('start-time').value = '00:00';
+            document.getElementById('end-date').value = todayEnd.toISOString().split('T')[0];
+            document.getElementById('end-time').value = '23:59';
+
+            this.loadSalesHistoryFromFirestore(todayStart.toISOString(), todayEnd.toISOString());
+        },
+
+        loadSalesHistoryFromFirestore(startDate, endDate) {
             const historyCollectionRef = this.getSalesHistoryCollectionRef();
             if (!historyCollectionRef) return;
 
@@ -1416,10 +1463,18 @@
                 this.state.unsubscribeSalesHistory();
             }
 
-            const { query } = window.firebaseServices.api;
+            const { query, where } = window.firebaseServices.api;
             
-            let q = query(historyCollectionRef);
+            let q;
             document.getElementById('summary-title').textContent = `สรุปยอดขาย`;
+            if (startDate && endDate) {
+                 q = query(historyCollectionRef, 
+                    where("timestamp", ">=", startDate), 
+                    where("timestamp", "<=", endDate)
+                );
+            } else {
+                q = query(historyCollectionRef);
+            }
 
             this.state.unsubscribeSalesHistory = window.firebaseServices.api.onSnapshot(q, (querySnapshot) => {
                 const newHistory = [];
