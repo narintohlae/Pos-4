@@ -1413,10 +1413,14 @@
         
         toggleUIVisibility() {
             const summarySection = document.getElementById('sales-summary-section');
+            const filterSection = document.querySelector('.filter-section');
+
             if (this.state.isRestrictedMode) {
                 if (summarySection) summarySection.style.display = 'none';
+                if (filterSection) filterSection.style.display = 'none';
             } else {
                 if (summarySection) summarySection.style.display = 'block';
+                if (filterSection) filterSection.style.display = 'flex';
             }
             this.updateHistoryDisplay();
         },
