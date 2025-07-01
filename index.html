@@ -92,9 +92,24 @@
             flex-direction: column;
         }
 
+        .form-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group label {
+            font-size: 0.9em;
+            color: var(--secondary-color);
+            display: block;
+            margin-bottom: 0.1rem; /* Reduced margin */
+        }
+
         #barcode-input {
-            width: 100%; padding: 0.75rem; font-size: 1.1em;
-            box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px;
+            width: 100%; 
+            padding: 0.4rem; /* Reduced padding */
+            font-size: 1.1em;
+            box-sizing: border-box; 
+            border: 1px solid var(--border-color); 
+            border-radius: 4px;
             transition: border-color 0.3s, box-shadow 0.3s;
         }
         
@@ -368,7 +383,7 @@
                     <div class="search-column">
                         <h2><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ค้นหาสินค้า</h2>
                         <div class="form-group">
-                            <label for="barcode-input" style="font-size: 0.9em; color: var(--secondary-color);">F2=บิลใหม่ | F5=ค้นหา | F8=ล้าง | F9=ชำระเงิน | F11=ส่วนลด | Del=ปิดบิล</label>
+                            <label for="barcode-input">F2=บิลใหม่ | F5=ค้นหา | F8=ล้าง | F9=ชำระเงิน | F11=ส่วนลด | Del=ปิดบิล</label>
                             <input type="text" id="barcode-input" placeholder="ค้นหา... (เช่น: 3*1234.)" autofocus>
                         </div>
                         <div id="search-results"></div>
