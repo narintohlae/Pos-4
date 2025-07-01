@@ -172,22 +172,21 @@
 
         #cart-items li {
             background-color: #f1f3f5; 
-            padding: 0.4rem; /* Further reduced padding */
+            padding: 0.5rem; /* Reduced padding */
             border-radius: 4px;
             margin-bottom: 0.15rem; /* Reduced margin */
             display: grid;
             grid-template-columns: 30px 1fr 120px 100px 110px 40px;
             align-items: center; 
             gap: 0.75rem; /* Reduced gap */
-            font-size: 14px; /* Set font size for the entire row */
         }
         
         .item-input {
             text-align: right;
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            padding: 4px; /* Slightly reduced padding */
-            font-size: 14px; /* Set explicit font size */
+            padding: 5px;
+            font-size: 1em;
             background-color: var(--white-color);
             width: 100%;
             box-sizing: border-box;
@@ -388,7 +387,7 @@
                         <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ค้นหาสินค้า</h2>
                         <div class="form-group">
                             <label for="barcode-input">F2=บิลใหม่ | F5=ค้นหา | F8=ล้าง | F9=ชำระเงิน | F11=ส่วนลด | Del=ปิดบิล</label>
-                            <input type="text" id="barcode-input" placeholder="ค้นหา... (เช่น: 3*1234.)" autofocus>
+                            <input type="text" id="barcode-input" placeholder="ค้นหา..." autofocus>
                         </div>
                         <div id="search-results"></div>
 
@@ -1460,4 +1459,94 @@
             this.switchTab(tabId);
         },
 
-        switchTab(tab
+        switchTab(tabId) {
+            if (!this.state.tabs.has(tabId)) return;
+            this.state.activeTabId = tabId;
+            this.renderTabs();
+            this.updateCartDisplay();
+            document.getElementById('barcode-input').focus();
+        },
+
+        closeTab(tabId, confirm = true) {
+            const tabData = this.state.tabs.get(tabId);
+            if (!tabData) return;
+
+            if (confirm && tabData.cart.length > 0) {
+                this.showDeleteConfirmModal(tabId, true);
+                return;
+            }
+            
+            this.state.tabs.delete(tabId);
+            
+            if (this.state.activeTabId === tabId) {
+                const remainingTabs = Array.from(this.state.tabs.keys());
+                if (remainingTabs.length > 0) {
+                    this.switchTab(remainingTabs[0]);
+                } else {
+                    this.addNewSaleTab();
+                }
+            }
+            
+            this.renderTabs();
+        },
+
+        renderTabs() {
+            const tabsContainer = document.getElementById('cart-tabs');
+            if (!tabsContainer) return;
+            tabsContainer.innerHTML = '';
+            
+            const self = this; // Bind 'this' for event handlers
+            this.state.tabs.forEach((data, id) => {
+                const tabButton = document.createElement('button');
+                tabButton.className = 'tab-button';
+                tabButton.textContent = data.name;
+                tabButton.onclick = () => self.switchTab(id);
+
+                if (id === this.state.activeTabId) {
+                    tabButton.classList.add('active');
+                }
+                
+                if (this.state.tabs.size > 1) {
+                    const closeButton = document.createElement('button');
+                    closeButton.className = 'close-tab-btn';
+                    closeButton.innerHTML = '&times;';
+                    closeButton.onclick = (e) => {
+                        e.stopPropagation(); 
+                        self.closeTab(id);
+                    };
+                    tabButton.appendChild(closeButton);
+                }
+
+                tabsContainer.appendChild(tabButton);
+            });
+        },
+
+        navigateTabs(direction) {
+            const tabKeys = Array.from(this.state.tabs.keys());
+            if(tabKeys.length <= 1) return;
+
+            let currentIndex = tabKeys.indexOf(this.state.activeTabId);
+            currentIndex += direction;
+
+            if (currentIndex >= tabKeys.length) {
+                currentIndex = 0;
+            } else if (currentIndex < 0) {
+                currentIndex = tabKeys.length - 1;
+            }
+            
+            this.switchTab(tabKeys[currentIndex]);
+        }
+    };
+
+    // --- APPLICATION ENTRY POINT ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Since event handlers in HTML attributes (onclick, onchange) can't access `this`
+        // from the POS_APP object, we expose the necessary functions globally.
+        window.POS_APP = POS_APP;
+        POS_APP.init();
+    });
+
+</script>
+
+</body>
+</html>
