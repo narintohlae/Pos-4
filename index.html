@@ -58,26 +58,30 @@
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 0.5rem;
             margin-top: 0;
-            font-size: 18px; /* Adjusted font size */
+            font-size: 1.5rem; /* Reverted to a larger, more readable size */
+        }
+        
+        h3 {
+           font-size: 1.25rem;
         }
         
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 0.75rem;
+            gap: 1rem; /* Increased gap */
             text-align: center;
         }
         .summary-item {
             background-color: #f1f3f5;
-            padding: 0.75rem;
+            padding: 1rem; /* Increased padding */
             border-radius: 8px;
         }
         .summary-item .label {
-            font-size: 0.8em;
+            font-size: 1em; /* Increased font size */
             color: var(--secondary-color);
         }
         .summary-item .value {
-            font-size: 1.2em;
+            font-size: 2em; /* Increased font size */
             font-weight: bold;
             color: var(--primary-color);
         }
@@ -94,19 +98,19 @@
         }
 
         .form-group {
-            margin-bottom: 0.35rem; /* Further reduced margin */
+            margin-bottom: 1rem; /* Increased margin */
         }
 
         .form-group label {
             font-size: 0.9em;
             color: var(--secondary-color);
             display: block;
-            margin-bottom: 0.1rem; /* Reduced margin */
+            margin-bottom: 0.5rem; /* Increased margin */
         }
 
         #barcode-input {
             width: 100%; 
-            padding: 0.4rem; /* Reduced padding */
+            padding: 0.75rem; /* Reverted to original padding */
             font-size: 1.1em;
             box-sizing: border-box; 
             border: 1px solid var(--border-color); 
@@ -419,7 +423,7 @@
                         <div id="search-results"></div>
 
                         <!-- Sales Summary Section -->
-                        <div style="margin-top: 1.5rem;">
+                        <div id="sales-summary-section" style="margin-top: 1.5rem;">
                             <h3 id="summary-title">สรุปยอดขาย</h3>
                             <div class="summary-grid">
                                 <div class="summary-item">
@@ -643,6 +647,7 @@
             activeModalCloseHandler: null,
             tabs: new Map(),
             activeTabId: null,
+            isRestrictedMode: false
         },
 
         // --- INITIALIZATION ---
@@ -669,6 +674,7 @@
             }
             this.loadProductData();
             this.setupEventListeners();
+            this.toggleUIVisibility(); 
             document.getElementById('barcode-input').focus();
         },
         
@@ -817,6 +823,22 @@
             if (e.key === 'Enter') { 
                 e.preventDefault();
                 const inputValue = document.getElementById('barcode-input').value.trim();
+
+                // Check for special admin codes first
+                if (inputValue === '0000000000') {
+                    this.state.isRestrictedMode = true;
+                    this.toggleUIVisibility();
+                    document.getElementById('barcode-input').value = '';
+                    this.displaySearchResults([]); // Clear search results
+                    return; // Stop further execution
+                } else if (inputValue === '1111111111') {
+                    this.state.isRestrictedMode = false;
+                    this.toggleUIVisibility();
+                    document.getElementById('barcode-input').value = '';
+                    this.displaySearchResults([]); // Clear search results
+                    return; // Stop further execution
+                }
+
                 const quantityPattern = /^(\d+)\s*\*\s*(.+)$/;
                 const match = inputValue.match(quantityPattern);
 
@@ -1366,10 +1388,26 @@
                 const row = historyBody.insertRow();
                 const itemDetails = sale.items.map(item => `${item['สินค้า']} (x${item.quantity})`).join('<br>');
                 const discountAmount = sale.discount ? sale.discount.toFixed(2) : '0.00';
-                row.innerHTML = `<td>${new Date(sale.timestamp).toLocaleString('th-TH')}</td><td>${sale.id}</td><td>${itemDetails}</td><td>${discountAmount}</td><td><strong>${sale.total.toFixed(2)}</strong></td><td style="white-space: nowrap;"><button class="edit-history-btn" onclick="POS_APP.editSaleRecord('${sale.firestoreId}')">แก้ไข</button><button class="delete-history-btn" onclick="POS_APP.showDeleteConfirmModal('${sale.firestoreId}', false)">ลบ</button></td>`;
+                
+                let actionCellHTML = '';
+                if (!this.state.isRestrictedMode) {
+                    actionCellHTML = `<button class="edit-history-btn" onclick="POS_APP.editSaleRecord('${sale.firestoreId}')">แก้ไข</button><button class="delete-history-btn" onclick="POS_APP.showDeleteConfirmModal('${sale.firestoreId}', false)">ลบ</button>`;
+                }
+
+                row.innerHTML = `<td>${new Date(sale.timestamp).toLocaleString('th-TH')}</td><td>${sale.id}</td><td>${itemDetails}</td><td>${discountAmount}</td><td><strong>${sale.total.toFixed(2)}</strong></td><td style="white-space: nowrap;">${actionCellHTML}</td>`;
             });
         },
         
+        toggleUIVisibility() {
+            const summarySection = document.getElementById('sales-summary-section');
+            if (this.state.isRestrictedMode) {
+                if (summarySection) summarySection.style.display = 'none';
+            } else {
+                if (summarySection) summarySection.style.display = 'block';
+            }
+            this.updateHistoryDisplay();
+        },
+
         loadSalesHistoryFromFirestore() {
             const historyCollectionRef = this.getSalesHistoryCollectionRef();
             if (!historyCollectionRef) return;
