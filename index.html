@@ -710,7 +710,7 @@
             });
 
             document.querySelector('.finish-sale').addEventListener('click', this.showPaymentModal.bind(this));
-            document.querySelector('.clear-cart').addEventListener('click', this.clearCart.bind(this));
+            document.querySelector('.clear-cart').addEventListener('click', this.showClearCartConfirmModal.bind(this));
             
             document.getElementById('filter-history-btn').addEventListener('click', this.filterHistoryByDateTime.bind(this));
             document.getElementById('today-history-btn').addEventListener('click', this.filterHistoryForToday.bind(this));
@@ -879,21 +879,17 @@
             }
             else if (e.key === 'Delete') {
                 e.preventDefault();
-                if(this.state.activeTabId) this.closeTab(this.state.activeTabId, false); 
+                if(this.state.activeTabId) this.closeTab(this.state.activeTabId, true); 
             }
             else if (e.key === 'F9') { e.preventDefault(); this.showPaymentModal(); } 
             else if (e.key === 'F5') { e.preventDefault(); document.getElementById('barcode-input').focus(); } 
             else if (e.key === 'F11') { e.preventDefault(); document.getElementById('discount-input').focus(); document.getElementById('discount-input').select(); }
             else if (e.key === 'F2') { e.preventDefault(); this.addNewSaleTab(); }
-            else if (e.key === 'F8') { e.preventDefault(); this.clearCart(); }
+            else if (e.key === 'F8') { e.preventDefault(); this.showClearCartConfirmModal(); }
             else if (e.key === 'Escape') {
                 if (document.getElementById('payment-modal').style.display === 'flex') { e.preventDefault(); this.hidePaymentModal(); }
                 if (document.getElementById('delete-confirm-modal').style.display === 'flex') { e.preventDefault(); this.hideDeleteConfirmModal(); }
                 if (document.getElementById('clear-options-modal').style.display === 'flex') { e.preventDefault(); this.hideClearOptionsModal(); }
-                if (document.getElementById('save-success-overlay').style.display === 'flex') {
-                    e.preventDefault();
-                    this.hideSuccessOverlay();
-                }
             }
         },
 
@@ -1144,6 +1140,23 @@
             }
         },
 
+        showClearCartConfirmModal() {
+            const cart = this.getActiveCart();
+            if (cart.length === 0) return;
+
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+            const confirmText = document.getElementById('delete-confirm-text');
+            
+            confirmText.textContent = `คุณแน่ใจหรือไม่ว่าต้องการล้างตะกร้าสินค้าทั้งหมด?`;
+            confirmBtn.onclick = () => {
+                this.clearCart();
+                this.hideDeleteConfirmModal();
+            };
+            
+            document.getElementById('delete-confirm-modal').style.display = 'flex';
+            confirmBtn.focus();
+        },
+
         // --- PAYMENT & SUCCESS MODAL LOGIC ---
         showPaymentModal() {
             const cart = this.getActiveCart();
@@ -1176,28 +1189,6 @@
                 changeEl.textContent = 'เงินไม่พอ';
                 changeEl.style.color = 'var(--danger-color)';
             }
-        },
-
-        showSuccessOverlay() {
-            const successOverlay = document.getElementById('save-success-overlay');
-            successOverlay.style.display = 'flex';
-
-            this.state.activeModalCloseHandler = (e) => {
-                if (e.key === 'Enter' || e.key === 'Escape') {
-                    e.preventDefault();
-                    this.hideSuccessOverlay();
-                }
-            };
-            document.addEventListener('keydown', this.state.activeModalCloseHandler);
-        },
-        
-        hideSuccessOverlay() {
-            document.getElementById('save-success-overlay').style.display = 'none';
-            if (this.state.activeModalCloseHandler) {
-                document.removeEventListener('keydown', this.state.activeModalCloseHandler);
-                this.state.activeModalCloseHandler = null;
-            }
-            document.getElementById('barcode-input').focus();
         },
         
         // --- SALE & HISTORY LOGIC (with Firestore) ---
@@ -1245,9 +1236,9 @@
                 const tabToDelete = this.state.activeTabId;
                 
                 document.getElementById('edit-status').style.display = 'none';
-                this.hidePaymentModal(); // Hides modal, focuses barcode input
+                this.hidePaymentModal(); 
                 
-                this.closeTab(tabToDelete, false); // Closes old tab, opens new one, re-focuses barcode input
+                this.closeTab(tabToDelete, false); 
 
             } catch (e) {
                 console.error("Error adding document: ", e);
