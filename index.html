@@ -1307,6 +1307,7 @@
             }
             
             document.getElementById('delete-confirm-modal').style.display = 'flex';
+            setTimeout(() => confirmBtn.focus(), 50);
         },
 
         hideDeleteConfirmModal() {
