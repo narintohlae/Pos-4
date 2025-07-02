@@ -575,14 +575,6 @@
             </div>
         </div>
     
-        <!-- Save Success Overlay -->
-        <div id="save-success-overlay" class="modal-overlay" style="background-color: rgba(0,0,0,0.4);">
-            <div style="background-color: var(--success-color); color: white; padding: 2rem 4rem; border-radius: 8px; font-size: 1.5em; font-weight: bold; text-align: center;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 1rem;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                <p>บันทึกการขายสำเร็จ!</p>
-                <p style="font-size: 0.7em; font-weight: normal; margin-top: 1rem;">กด Enter เพื่อไปต่อ</p>
-            </div>
-        </div>
     </div>
 
     <!-- Firebase SDK -->
@@ -1251,11 +1243,11 @@
                 console.log("Sale recorded to Firestore with ID:", newSaleId);
                 
                 const tabToDelete = this.state.activeTabId;
-                this.closeTab(tabToDelete, false); 
                 
                 document.getElementById('edit-status').style.display = 'none';
-                this.hidePaymentModal();
-                this.showSuccessOverlay();
+                this.hidePaymentModal(); // Hides modal, focuses barcode input
+                
+                this.closeTab(tabToDelete, false); // Closes old tab, opens new one, re-focuses barcode input
 
             } catch (e) {
                 console.error("Error adding document: ", e);
