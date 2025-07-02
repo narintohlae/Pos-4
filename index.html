@@ -58,7 +58,7 @@
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 0.5rem;
             margin-top: 0;
-            font-size: 1.5rem; /* Reverted to a larger, more readable size */
+            font-size: 1.5rem;
         }
         
         h3 {
@@ -68,27 +68,27 @@
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 1rem; /* Increased gap */
+            gap: 1rem;
             text-align: center;
         }
         .summary-item {
             background-color: #f1f3f5;
-            padding: 1rem; /* Increased padding */
+            padding: 1rem;
             border-radius: 8px;
         }
         .summary-item .label {
-            font-size: 1em; /* Increased font size */
+            font-size: 1em;
             color: var(--secondary-color);
         }
         .summary-item .value {
-            font-size: 2em; /* Increased font size */
+            font-size: 2em;
             font-weight: bold;
             color: var(--primary-color);
         }
 
         .pos-layout {
             display: grid;
-            grid-template-columns: 1fr 3fr; /* 25% / 75% ratio */
+            grid-template-columns: 1fr 3fr;
             gap: 1.5rem;
         }
         
@@ -98,19 +98,19 @@
         }
 
         .form-group {
-            margin-bottom: 1rem; /* Increased margin */
+            margin-bottom: 1rem;
         }
 
         .form-group label {
             font-size: 0.9em;
             color: var(--secondary-color);
             display: block;
-            margin-bottom: 0.5rem; /* Increased margin */
+            margin-bottom: 0.5rem;
         }
 
         #barcode-input {
             width: 100%; 
-            padding: 0.75rem; /* Reverted to original padding */
+            padding: 0.75rem;
             font-size: 1.1em;
             box-sizing: border-box; 
             border: 1px solid var(--border-color); 
@@ -154,8 +154,8 @@
 
         .cart-header-row {
             display: grid;
-            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
-            gap: 0.75rem; /* Reduced gap */
+            grid-template-columns: 30px 1fr 100px 80px 90px 30px;
+            gap: 0.75rem;
             padding: 0 0.75rem 0.5rem 0.75rem;
             font-weight: bold;
             color: var(--secondary-color);
@@ -176,22 +176,22 @@
 
         #cart-items li {
             background-color: #f1f3f5; 
-            padding: 0.4rem; /* Further reduced padding */
+            padding: 0.5rem;
             border-radius: 4px;
-            margin-bottom: 0.15rem; /* Reduced margin */
+            margin-bottom: 0.25rem;
             display: grid;
-            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
+            grid-template-columns: 30px 1fr 100px 80px 90px 30px;
             align-items: center; 
-            gap: 0.75rem; /* Reduced gap */
-            font-size: 14px; /* Set font size for the entire row */
+            gap: 0.75rem;
+            font-size: 14px;
         }
         
         .item-input {
             text-align: right;
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            padding: 4px; /* Slightly reduced padding */
-            font-size: 14px; /* Set explicit font size */
+            padding: 4px;
+            font-size: 14px;
             background-color: var(--white-color);
             width: 100%;
             box-sizing: border-box;
@@ -209,7 +209,7 @@
             gap: 5px;
         }
          .col-qty .item-input {
-            width: 55px;
+            width: 45px;
             text-align: center;
         }
 
@@ -217,11 +217,11 @@
             background-color: var(--danger-color);
             color: white;
             border: none;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            font-size: 1.2em;
-            line-height: 24px;
+            font-size: 1.4em;
+            line-height: 28px;
             cursor: pointer;
             padding: 0;
             flex-shrink: 0;
@@ -399,11 +399,71 @@
         }
 
         /* Responsive */
-        @media (max-width: 992px) {
+        @media (max-width: 768px) {
+            .body-content {
+                padding: 0.5rem;
+            }
+            .card {
+                padding: 1rem;
+            }
             .pos-layout {
                 grid-template-columns: 1fr;
             }
-            .filter-section { flex-direction: column; align-items: stretch !important; }
+            h2, h3 {
+                font-size: 1.25rem;
+            }
+            h3 {
+                font-size: 1.1rem;
+            }
+            .summary-grid {
+                gap: 0.5rem;
+            }
+            .summary-item .value {
+                font-size: 1.5em;
+            }
+            .payment-label {
+                font-size: 1.2em;
+            }
+            #payment-total-final {
+                font-size: 2em;
+            }
+            #cash-received-input {
+                font-size: 1.5em;
+            }
+            #payment-change {
+                font-size: 2.2em;
+            }
+            #cart-items li {
+                gap: 0.5rem;
+                font-size: 13px;
+                padding: 0.5rem;
+                grid-template-columns: 24px 1fr 80px 70px 80px 24px;
+            }
+            .cart-header-row {
+                gap: 0.5rem;
+                grid-template-columns: 24px 1fr 80px 70px 80px 24px;
+            }
+            .col-qty .item-input {
+                width: 40px;
+            }
+            .delete-item-btn, .close-tab-btn {
+                width: 32px;
+                height: 32px;
+                line-height: 32px;
+                font-size: 1.5em;
+            }
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch !important;
+            }
+            .filter-section input {
+                width: 100%;
+                box-sizing: border-box;
+                margin-bottom: 0.5rem;
+            }
+            .filter-section button {
+                width: 100%;
+            }
         }
     </style>
 </head>
