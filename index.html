@@ -145,16 +145,21 @@
         .search-item {
             padding: 0.75rem; cursor: pointer; border-bottom: 1px solid var(--border-color);
             display: flex; justify-content: space-between;
+            align-items: center;
         }
         .search-item:last-child { border-bottom: none; }
         .search-item:hover, .search-item.selected {
             background-color: var(--primary-color); color: var(--white-color);
         }
-        .search-item.selected .price { color: var(--white-color); }
+        .search-item.selected .price, .search-item.selected .sub-text { color: var(--white-color); }
+        .search-item .sub-text {
+            font-size: 0.8em;
+            color: var(--secondary-color);
+        }
 
         .cart-header-row {
             display: grid;
-            grid-template-columns: 30px 1fr 100px 80px 90px 30px;
+            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
             gap: 0.75rem;
             padding: 0 0.75rem 0.5rem 0.75rem;
             font-weight: bold;
@@ -180,7 +185,7 @@
             border-radius: 4px;
             margin-bottom: 0.25rem;
             display: grid;
-            grid-template-columns: 30px 1fr 100px 80px 90px 30px;
+            grid-template-columns: 30px 1fr 120px 100px 110px 40px;
             align-items: center; 
             gap: 0.75rem;
             font-size: 14px;
@@ -327,18 +332,18 @@
             margin-bottom: 0;
         }
         .payment-label {
-            font-size: 1.5em; /* Increased font size */
+            font-size: 1.5em;
             color: var(--secondary-color);
         }
         .payment-amount {
             font-weight: bold;
         }
         #payment-total-final {
-            font-size: 2.5em; /* Increased font size */
+            font-size: 2.5em;
             color: var(--primary-color);
         }
         #cash-received-input {
-            font-size: 2em; /* Increased font size */
+            font-size: 2em;
             text-align: right;
             width: 50%;
             padding: 0.5rem;
@@ -346,7 +351,7 @@
             border-radius: 4px;
         }
         #payment-change {
-            font-size: 3em; /* Increased font size */
+            font-size: 3em;
             color: var(--success-color);
         }
 
@@ -697,7 +702,7 @@
     const POS_APP = {
         // --- CONFIGURATION & STATE ---
         config: {
-            googleSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTI3YprJH_ZZDF5A3ovmZwwByaMJ_wrZhPWoZjSkMqSxc3ouBlx6kDBRB_f7nY5D39AvvjR4V34JMVd/pub?gid=146829827&single=true&output=csv',
+            googleSheetUrl: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTT3t_8Hx7WcD8uUi2IGt1zDbOMB3MSK57dYnfqrrut3do_Gw2hzYSG9IBIEg8fg7uTEL2sVq-IfVJR/pub?gid=0&single=true&output=csv',
             thaiToEngMap: { 'ๅ': '1', '/': '2', '-': '3', 'ภ': '4', 'ถ': '5', 'ุ': '6', 'ึ': '7', 'ค': '8', 'ต': '9', 'จ': '0', 'ข': '-', 'ช': '=', 'ๆ': 'q', 'ไ': 'w', 'ำ': 'e', 'พ': 'r', 'ะ': 't', 'ั': 'y', 'ี': 'u', 'ร': 'i', 'น': 'o', 'ย': 'p', 'บ': '[', 'ล': ']', 'ฟ': 'a', 'ห': 's', 'ก': 'd', 'ด': 'f', 'เ': 'g', '้': 'h', '่': 'j', 'า': 'k', 'ส': 'l', 'ว': ';', 'ง': "'", 'ผ': 'z', 'ป': 'x', 'แ': 'c', 'อ': 'v', 'ิ': 'b', 'ท': 'n', 'ม': 'm', 'ใ': ',', 'ฝ': '.', 'ซ': '/' }
         },
         state: {
@@ -982,19 +987,35 @@
             Papa.parse(this.config.googleSheetUrl, {
                 download: true,
                 header: true,
-                dynamicTyping: true,
+                skipEmptyLines: true,
                 complete: (results) => {
-                    console.log("Finished parsing with PapaParse:", results.data);
-                    this.state.productDatabase = results.data.filter(p => p['รหัสสินค้า'] && p['รหัสสินค้า'].toString().trim() !== '');
+                    console.log("Parsed CSV Headers:", results.meta.fields);
+                    const rawData = results.data;
+                    const cleanDatabase = [];
 
-                    this.state.productDatabase.forEach(p => {
-                        if (typeof p['ราคา'] !== 'number' || isNaN(p['ราคา'])) {
-                           p['ราคา'] = 0;
+                    rawData.forEach(p => {
+                        const productCode = p['รหัสสินค้า'] ? p['รหัสสินค้า'].toString().trim() : '';
+                        if (productCode) {
+                            const cleanProduct = {
+                                code: productCode,
+                                name: p['ชื่อการค้า'] || 'N/A',
+                                unit: p['หน่วย'] || '',
+                                barcode: p['บาร์โค้ด'] || '',
+                                price: parseFloat(p['ราคา']) || 0,
+                                stock: parseInt(p['คงเหลือ'], 10) || 0,
+                                cost: parseFloat(p['ต้นทุน']) || 0
+                            };
+                            cleanProduct._searchableText = [
+                                cleanProduct.name,
+                                cleanProduct.code,
+                                cleanProduct.barcode,
+                                cleanProduct.price.toString() // ensure price is a string for search
+                            ].join(' ').toLowerCase();
+                            cleanDatabase.push(cleanProduct);
                         }
-                        p._searchableText = [
-                            p['สินค้า'], p['รหัสสินค้า'], p['บาร์โค้ด']
-                        ].join(' ').toLowerCase();
                     });
+                    
+                    this.state.productDatabase = cleanDatabase;
                     console.log("Product database loaded and processed:", this.state.productDatabase);
                 },
                 error: (error, file) => {
@@ -1051,7 +1072,11 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'search-item';
                 if (index === this.state.selectedSearchIndex) itemDiv.classList.add('selected');
-                itemDiv.innerHTML = `<span>${product['สินค้า']}</span><span class="price" style="color:var(--success-color); font-weight:bold;">${parseFloat(product['ราคา']).toFixed(2)} ฿</span>`;
+                itemDiv.innerHTML = `
+                    <div>
+                        <span>${product.name} <span class="sub-text">(คงเหลือ: ${product.stock || 0} ${product.unit || ''})(ต้นทุน: ${(product.cost || 0).toFixed(2)})</span></span>
+                    </div>
+                    <span class="price" style="color:var(--success-color); font-weight:bold;">${parseFloat(product.price).toFixed(2)} ฿</span>`;
                 itemDiv.onclick = () => {
                     const inputValue = document.getElementById('barcode-input').value.trim();
                     const quantityPattern = /^(\d+)\s*\*\s*(.+)$/;
@@ -1089,7 +1114,7 @@
             const cart = this.getActiveCart();
             if (!cart) return;
 
-            const existingProduct = cart.find(item => item['รหัสสินค้า'] === product['รหัสสินค้า']);
+            const existingProduct = cart.find(item => item.code === product.code);
             if (existingProduct) { 
                 existingProduct.quantity += quantityToAdd;
             } else { 
@@ -1124,7 +1149,7 @@
             if (!isNaN(newPrice) && newPrice >= 0) {
                 const item = cart[index];
                 if (item) {
-                    item['ราคา'] = newPrice;
+                    item.price = newPrice;
                 }
             }
             this.updateCartDisplay();
@@ -1136,7 +1161,7 @@
             if (!isNaN(newTotal) && newTotal >= 0) {
                 const item = cart[index];
                 if (item && item.quantity > 0) {
-                    item['ราคา'] = newTotal / item.quantity;
+                    item.price = newTotal / item.quantity;
                 }
             }
             this.updateCartDisplay();
@@ -1155,23 +1180,22 @@
             
             if(!cart) return;
 
-            const subtotal = cart.reduce((sum, item) => sum + (item['ราคา'] || 0) * item.quantity, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
             const total = subtotal - (discount || 0);
             
             cart.forEach((item, index) => {
                 const li = document.createElement('li');
                 li.innerHTML = `
                     <div class="col-seq">${index + 1}.</div>
-                    <div class="col-name"><strong>${item['สินค้า']}</strong></div>
+                    <div class="col-name"><strong>${item.name} <span style="font-size: 0.9em; color: var(--secondary-color); font-weight: normal;">(คงเหลือ: ${item.stock || 0} ${item.unit || ''})(ต้นทุน: ${(item.cost || 0).toFixed(2)})</span></strong></div>
                     <div class="col-qty">
                         <input type="text" inputmode="numeric" class="item-input" id="qty-input-${index}" value="${item.quantity}" onchange="POS_APP.editItemQuantity(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'qty', ${index})">
-                        <span class="item-unit" style="font-size: 0.9em; white-space: nowrap;">${item['หน่วย'] || ''}</span>
                     </div>
                     <div class="col-price col-right">
-                         <input type="text" inputmode="decimal" class="item-input" id="price-input-${index}" value="${parseFloat(item['ราคา']).toFixed(2)}" onchange="POS_APP.editItemPrice(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'price', ${index})">
+                         <input type="text" inputmode="decimal" class="item-input" id="price-input-${index}" value="${parseFloat(item.price).toFixed(2)}" onchange="POS_APP.editItemPrice(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'price', ${index})">
                     </div>
                     <div class="col-total col-right">
-                        <input type="text" inputmode="decimal" class="item-input" id="total-input-${index}" value="${((item['ราคา'] || 0) * item.quantity).toFixed(2)}" onchange="POS_APP.editItemTotalPrice(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'total', ${index})">
+                        <input type="text" inputmode="decimal" class="item-input" id="total-input-${index}" value="${((item.price || 0) * item.quantity).toFixed(2)}" onchange="POS_APP.editItemTotalPrice(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'total', ${index})">
                     </div>
                     <div class="col-delete col-center">
                         <button class="delete-item-btn" onclick="POS_APP.deleteItemFromCart(${index})">&times;</button>
@@ -1221,7 +1245,7 @@
         showPaymentModal() {
             const cart = this.getActiveCart();
             if (cart.length === 0) return;
-            const subtotal = cart.reduce((sum, item) => sum + (item['ราคา'] || 0) * item.quantity, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
             const discount = this.getActiveDiscount();
             const finalTotal = subtotal - discount;
 
@@ -1263,7 +1287,7 @@
             
             const cart = this.getActiveCart();
             const discount = this.getActiveDiscount();
-            const subtotal = cart.reduce((sum, item) => sum + (item['ราคา'] || 0) * item.quantity, 0);
+            const subtotal = cart.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
             const finalTotal = subtotal - discount;
             const cashReceived = parseFloat(document.getElementById('cash-received-input').value) || 0;
 
@@ -1443,7 +1467,7 @@
             
             this.state.salesHistory.forEach((sale) => {
                 const row = historyBody.insertRow();
-                const itemDetails = sale.items.map(item => `${item['สินค้า']} (x${item.quantity})`).join('<br>');
+                const itemDetails = sale.items.map(item => `${item.name} (x${item.quantity})`).join('<br>');
                 const discountAmount = sale.discount ? sale.discount.toFixed(2) : '0.00';
                 
                 let actionCellHTML = '';
@@ -1587,12 +1611,13 @@
                     'ยอดรวมก่อนลด': sale.subtotal ? sale.subtotal.toFixed(2) : '0.00',
                     'ส่วนลด': sale.discount ? sale.discount.toFixed(2) : '0.00',
                     'ยอดสุทธิ': sale.total ? sale.total.toFixed(2) : '0.00',
-                    'รหัสสินค้า': item['รหัสสินค้า'],
-                    'สินค้า': item['สินค้า'], 
-                    'หน่วย': item['หน่วย'], 
+                    'รหัสสินค้า': item.code,
+                    'สินค้า': item.name, 
+                    'หน่วย': item.unit, 
                     'จำนวน': item.quantity,
-                    'ราคาต่อหน่วย': parseFloat(item['ราคา']), 
-                    'ราคารวม (รายการนี้)': item['ราคา'] * item.quantity
+                    'ราคาต่อหน่วย': parseFloat(item.price), 
+                    'ต้นทุน': parseFloat(item.cost || 0),
+                    'ราคารวม (รายการนี้)': item.price * item.quantity
                 }))
             );
         },
@@ -1606,7 +1631,7 @@
             const worksheet = XLSX.utils.json_to_sheet(dataToExport);
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'ประวัติการขาย');
-            worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15} ];
+            worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15},{wch:15} ];
             XLSX.writeFile(workbook, `pos-history-${new Date().toISOString().split('T')[0]}.xlsx`);
         },
 
