@@ -1603,11 +1603,15 @@
             const billCount = displayedSales.length;
             const profit = netSales - totalCost;
 
-            document.getElementById('summary-total-sales').textContent = totalSales.toFixed(2);
-            document.getElementById('summary-total-discount').textContent = totalDiscount.toFixed(2);
-            document.getElementById('summary-net-sales').textContent = netSales.toFixed(2);
-            document.getElementById('summary-bill-count').textContent = billCount;
-            document.getElementById('summary-profit').textContent = profit.toFixed(2);
+            const formatCurrency = (number) => {
+                return number.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            };
+
+            document.getElementById('summary-total-sales').textContent = formatCurrency(totalSales);
+            document.getElementById('summary-total-discount').textContent = formatCurrency(totalDiscount);
+            document.getElementById('summary-net-sales').textContent = formatCurrency(netSales);
+            document.getElementById('summary-bill-count').textContent = billCount.toLocaleString('en-US');
+            document.getElementById('summary-profit').textContent = formatCurrency(profit);
         },
         
         async generateSaleId() {
