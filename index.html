@@ -220,19 +220,20 @@
         }
 
         .delete-item-btn {
-            background-color: var(--danger-color);
-            color: white;
+            background-color: transparent;
+            color: var(--danger-color);
             border: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            font-size: 1.4em;
+            font-size: 2em;
             font-weight: bold;
-            line-height: 18px;
+            line-height: 1;
             cursor: pointer;
             padding: 0;
             flex-shrink: 0;
             margin: 0 auto;
+            transition: transform 0.2s;
+        }
+        .delete-item-btn:hover {
+            transform: scale(1.2);
         }
 
         .totals-section {
@@ -1080,7 +1081,7 @@
                 if (index === this.state.selectedSearchIndex) itemDiv.classList.add('selected');
                 itemDiv.innerHTML = `
                     <div>
-                        <span>${product.name} <span class="sub-text">(คงเหลือ: ${product.stock || 0} ${product.unit || ''})(ต้นทุน: ${(product.cost || 0).toFixed(2)})</span></span>
+                        <span>${product.name}</span>
                     </div>
                     <span class="price" style="color:var(--success-color); font-weight:bold;">${parseFloat(product.price).toFixed(2)} ฿</span>`;
                 itemDiv.onclick = () => {
