@@ -1084,13 +1084,10 @@
                 itemDiv.className = 'search-item';
                 if (index === this.state.selectedSearchIndex) itemDiv.classList.add('selected');
                 
-                let productInfoHTML = `<span>${product.name}</span>`;
-                if (!this.state.isRestrictedMode) {
-                    productInfoHTML += `<span class="sub-text"> (คงเหลือ: ${product.stock || 0} ${product.unit || ''})(ต้นทุน: ${(product.cost || 0).toFixed(2)})</span>`;
-                }
-
                 itemDiv.innerHTML = `
-                    <div>${productInfoHTML}</div>
+                    <div>
+                        <span>${product.name}</span>
+                    </div>
                     <span class="price" style="color:var(--success-color); font-weight:bold;">${parseFloat(product.price).toFixed(2)} ฿</span>`;
                 itemDiv.onclick = () => {
                     const inputValue = document.getElementById('barcode-input').value.trim();
