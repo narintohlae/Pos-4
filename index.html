@@ -1083,10 +1083,14 @@
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'search-item';
                 if (index === this.state.selectedSearchIndex) itemDiv.classList.add('selected');
+                
+                let productInfoHTML = `<span>${product.name}</span>`;
+                if (!this.state.isRestrictedMode) {
+                    productInfoHTML += `<span class="sub-text"> (คงเหลือ: ${product.stock || 0} ${product.unit || ''})(ต้นทุน: ${(product.cost || 0).toFixed(2)})</span>`;
+                }
+
                 itemDiv.innerHTML = `
-                    <div>
-                        <span>${product.name}</span>
-                    </div>
+                    <div>${productInfoHTML}</div>
                     <span class="price" style="color:var(--success-color); font-weight:bold;">${parseFloat(product.price).toFixed(2)} ฿</span>`;
                 itemDiv.onclick = () => {
                     const inputValue = document.getElementById('barcode-input').value.trim();
@@ -1196,9 +1200,17 @@
             
             cart.forEach((item, index) => {
                 const li = document.createElement('li');
+                
+                let itemInfoHTML = `<strong>${item.name}</strong>`;
+                if (!this.state.isRestrictedMode) {
+                    itemInfoHTML += ` <span class="sub-text">(คงเหลือ: ${item.stock || 0} ${item.unit || ''})(ต้นทุน: ${(item.cost || 0).toFixed(2)})</span>`;
+                } else {
+                    itemInfoHTML += ` <span class="sub-text">(คงเหลือ: ${item.stock || 0} ${item.unit || ''})</span>`;
+                }
+
                 li.innerHTML = `
                     <div class="col-seq">${index + 1}.</div>
-                    <div class="col-name"><strong>${item.name}</strong> <span class="sub-text">(คงเหลือ: ${item.stock || 0} ${item.unit || ''})(ต้นทุน: ${(item.cost || 0).toFixed(2)})</span></div>
+                    <div class="col-name">${itemInfoHTML}</div>
                     <div class="col-qty">
                         <input type="text" inputmode="numeric" class="item-input" id="qty-input-${index}" value="${item.quantity}" onchange="POS_APP.editItemQuantity(${index}, this.value)" onfocus="this.select()" onkeydown="POS_APP.handleCartItemKeyDown(event, 'qty', ${index})">
                     </div>
@@ -1504,6 +1516,7 @@
                 if (filterSection) filterSection.style.display = 'flex';
             }
             this.updateHistoryDisplay();
+            this.updateCartDisplay();
         },
 
         filterHistoryByDateTime() {
