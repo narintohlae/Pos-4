@@ -1667,18 +1667,49 @@
             );
         },
 
-        exportToExcel() {
-            const dataToExport = this.getHistoryForExport();
-            if (dataToExport.length === 0) {
-                this.showInfoModal("ไม่มีข้อมูล", "ไม่มีข้อมูลประวัติการขายให้ Export", false);
-                return;
-            }
-            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'ประวัติการขาย');
-            worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15},{wch:15} ];
-            XLSX.writeFile(workbook, `pos-history-${new Date().toISOString().split('T')[0]}.xlsx`);
-        },
+// ... โค้ดส่วนอื่นใน POS_APP ...
+
+        exportToExcel() {
+            const dataToExport = this.getHistoryForExport();
+            if (dataToExport.length === 0) {
+                this.showInfoModal("ไม่มีข้อมูล", "ไม่มีข้อมูลประวัติการขายให้ Export", false);
+                return;
+            }
+
+            // --- ส่วนสร้างชื่อไฟล์ใหม่ ---
+            let fileName = 'SalesReport_';
+            const startDate = document.getElementById('start-date').value;
+            const startTime = document.getElementById('start-time').value;
+            const endDate = document.getElementById('end-date').value;
+            const endTime = document.getElementById('end-time').value;
+            
+            if (startDate && endDate) {
+                const formattedStartDate = startDate.replace(/-/g, '');
+                const formattedStartTime = startTime ? `-${startTime.replace(':', '')}` : '';
+                
+                const formattedEndDate = endDate.replace(/-/g, '');
+                const formattedEndTime = endTime ? `-${endTime.replace(':', '')}` : '';
+                
+                fileName += `${formattedStartDate}${formattedStartTime}_to_${formattedEndDate}${formattedEndTime}`;
+            } else {
+                const today = new Date();
+                const exportDate = today.getFullYear() +
+                                   String(today.getMonth() + 1).padStart(2, '0') +
+                                   String(today.getDate()).padStart(2, '0');
+                fileName += `AllHistory_ExportedOn_${exportDate}`;
+            }
+            
+            fileName += '.xlsx';
+            // --- จบส่วนสร้างชื่อไฟล์ใหม่ ---
+
+            const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'ประวัติการขาย');
+            worksheet['!cols'] = [ {wch:20}, {wch:12}, {wch:12}, {wch:15},{wch:15},{wch:15}, {wch:15},{wch:30},{wch:10}, {wch:10},{wch:15},{wch:15},{wch:15} ];
+            XLSX.writeFile(workbook, fileName); // ใช้ชื่อไฟล์ที่สร้างขึ้นใหม่
+        },
+
+// ... โค้ดส่วนอื่นใน POS_APP ...
 
         // --- TAB MANAGEMENT ---
         addNewSaleTab() {
