@@ -304,7 +304,7 @@
         }
         #history-table th { background-color: #e9ecef; position: sticky; top: 0; }
         #history-table tr:nth-child(even) { background-color: var(--light-bg); }
-        
+
         /* --- CSS ที่เพิ่มเข้ามาสำหรับไฮไลท์ --- */
         #history-table tr.exported-row {
             background-color: #f1f8e9; /* สีเขียวจางๆ */
@@ -825,7 +825,6 @@
                 console.error("App ID not available for Firestore query.");
                 return null;
             }
-            // Corrected public path with odd number of segments
             return api.collection(db, `artifacts/${appId}/public/data/salesHistory`);
         },
 
@@ -835,7 +834,6 @@
                 console.error("App ID or Document ID not available for Firestore query.");
                 return null;
             }
-             // Corrected public path
             return api.doc(db, `artifacts/${appId}/public/data/salesHistory`, firestoreId);
         },
         
@@ -1477,12 +1475,17 @@
             }
         },
 
+        // --- ฟังก์ชันที่อัปเดตแล้ว ---
         updateHistoryDisplay() {
             const historyBody = document.getElementById('history-body');
             const clearHistoryBtn = document.getElementById('clear-all-history-btn');
             
             if (!historyBody) return;
             historyBody.innerHTML = '';
+
+            const now = new Date();
+            const startOfCurrentHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
+            
             if (this.state.salesHistory.length === 0) {
                 historyBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">ไม่พบประวัติการขาย</td></tr>';
                 if(clearHistoryBtn) clearHistoryBtn.disabled = true;
@@ -1492,6 +1495,13 @@
             
             this.state.salesHistory.forEach((sale) => {
                 const row = historyBody.insertRow();
+
+                const saleTimestamp = new Date(sale.timestamp);
+                if (saleTimestamp < startOfCurrentHour) {
+                    row.classList.add('exported-row');
+                    row.title = 'รายการนี้ถูก Export แล้วโดยระบบอัตโนมัติ';
+                }
+
                 const itemDetails = sale.items.map(item => `${item.name} (x${item.quantity})`).join('<br>');
                 const discountAmount = sale.discount ? sale.discount.toFixed(2) : '0.00';
                 
