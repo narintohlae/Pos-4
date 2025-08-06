@@ -500,9 +500,13 @@
                     <div class="search-column">
                         <h2><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ค้นหาสินค้า</h2>
                         <div class="form-group">
-                            <label for="barcode-input">F2=บิลใหม่ | F5=ค้นหา | F8=ล้าง | F9=ชำระเงิน | F11=ส่วนลด | Del=ปิดบิล</label>
-                            <input type="text" id="barcode-input" placeholder="ค้นหา... (เช่น: 3*1234.)" autofocus>
-                        </div>
+                            <label for="barcode-input">F2:บิลใหม่ | F5:ค้นหา | F8:ล้าง | F9:ชำระเงิน | F11:ส่วนลด | Del:ปิดบิล</label>
+                            <input type="text" id="barcode-input" 
+                                   inputmode="latin" 
+                                   placeholder="[ENG] ค้นหา... (เช่น: 3*1234.)" 
+                                   data-base-placeholder="ค้นหา... (เช่น: 3*1234.)"
+                                   autofocus>
+                            </div>
                         <div id="search-results"></div>
 
                         <div id="sales-summary-section" style="margin-top: 1.5rem;">
@@ -729,7 +733,11 @@
             activeModalCloseHandler: null,
             tabs: new Map(),
             activeTabId: null,
-            isRestrictedMode: false
+            isRestrictedMode: false,
+            // === START: MODIFIED JS (New State) ===
+            keyboardLayout: 'ENG',
+            basePlaceholder: 'ค้นหา...'
+            // === END: MODIFIED JS (New State) ===
         },
 
         // --- INITIALIZATION ---
@@ -749,6 +757,13 @@
         
         start() {
             console.log("Initializing main application logic...");
+            // === START: MODIFIED JS (Initialize Placeholder) ===
+            const barcodeInput = document.getElementById('barcode-input');
+            if (barcodeInput) {
+                this.state.basePlaceholder = barcodeInput.getAttribute('data-base-placeholder');
+            }
+            this.updatePlaceholderHint();
+            // === END: MODIFIED JS (Initialize Placeholder) ===
             this.clearDataOnStart();
             this.loadSalesHistoryFromFirestore();
             if (this.state.tabs.size === 0) {
@@ -777,9 +792,13 @@
         },
 
         setupEventListeners() {
-            document.getElementById('barcode-input').addEventListener('input', this.handleInstantSearch.bind(this));
-            document.getElementById('barcode-input').addEventListener('keydown', this.handleSearchKeyDown.bind(this));
-            
+            const barcodeInput = document.getElementById('barcode-input');
+            barcodeInput.addEventListener('input', this.handleInstantSearch.bind(this));
+            barcodeInput.addEventListener('keydown', this.handleSearchKeyDown.bind(this));
+            // === START: MODIFIED JS (Add event listener) ===
+            barcodeInput.addEventListener('keydown', this.detectKeyboardLayout.bind(this));
+            // === END: MODIFIED JS (Add event listener) ===
+
             document.getElementById('discount-input').addEventListener('input', this.updateCartOnInput.bind(this));
             document.getElementById('discount-input').addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -869,6 +888,33 @@
         },
 
         // --- KEYBOARD HANDLING ---
+        // === START: MODIFIED JS (New Functions) ===
+        updatePlaceholderHint() {
+            const input = document.getElementById('barcode-input');
+            if (input) {
+                input.placeholder = `[${this.state.keyboardLayout}] ${this.state.basePlaceholder}`;
+            }
+        },
+
+        detectKeyboardLayout(e) {
+            // Ignore if it's not a single character key (e.g., Shift, Enter, F5)
+            // or if a modifier key is pressed.
+            if (e.key.length !== 1 || e.ctrlKey || e.altKey || e.metaKey) {
+                return;
+            }
+
+            const isThai = /[ก-๙]/.test(e.key);
+
+            if (isThai && this.state.keyboardLayout !== 'TH') {
+                this.state.keyboardLayout = 'TH';
+                this.updatePlaceholderHint();
+            } else if (!isThai && this.state.keyboardLayout !== 'ENG') {
+                // This covers English letters, numbers, and symbols.
+                this.state.keyboardLayout = 'ENG';
+                this.updatePlaceholderHint();
+            }
+        },
+        // === END: MODIFIED JS (New Functions) ===
         handleCartItemKeyDown(e, type, index) {
             if (e.key !== 'Enter') return;
 
