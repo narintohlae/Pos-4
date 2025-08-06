@@ -765,7 +765,7 @@
             this.updatePlaceholderHint();
             // === END: MODIFIED JS (Initialize Placeholder) ===
             this.clearDataOnStart();
-            this.loadSalesHistoryFromFirestore();
+            this.filterHistoryForToday();
             if (this.state.tabs.size === 0) {
                 this.addNewSaleTab();
             }
@@ -1683,8 +1683,8 @@
             document.getElementById('summary-profit').textContent = formatCurrency(profit);
         },
         
-        async generateSaleId() {
-            const { query, where, getCountFromServer } = window.firebaseServices.api;
+async generateSaleId() {
+            // ไม่มีการใช้ getCountFromServer อีกต่อไป
             const salesCollectionRef = this.getSalesHistoryCollectionRef();
             if (!salesCollectionRef) return `Error-${Date.now()}`;
 
@@ -1694,15 +1694,25 @@
             const day = today.getDate().toString().padStart(2, '0');
             const datePrefix = `${year}${month}${day}`;
 
-            const startOfDay = new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-            const endOfDay = new Date(new Date().setHours(23, 59, 59, 999)).toISOString();
-
-            const q = query(salesCollectionRef, where("timestamp", ">=", startOfDay), where("timestamp", "<=", endOfDay));
+            // --- ตรรกะใหม่ที่จัดการการรีเฟรชหน้าเว็บ ---
+            // ตรวจสอบว่าเราได้นับยอดสำหรับวันนี้ไปแล้วหรือยัง
+            if (this.state.lastSaleDate !== datePrefix) {
+                console.log("Counter reset or new day. Recalculating from local history...");
+                
+                // ใช้ข้อมูล salesHistory ที่โหลดมาแล้วตอนเปิดหน้าเว็บ และกรองเฉพาะบิลของวันนี้
+                const todaySales = this.state.salesHistory.filter(sale => sale.id && sale.id.startsWith(datePrefix));
+                
+                // ตั้งค่าตัวนับเป็นจำนวนบิลของวันนี้ที่หาเจอ
+                this.state.dailySaleCounter = todaySales.length;
+                this.state.lastSaleDate = datePrefix; // บันทึกว่าวันนี้ได้นับแล้ว
+                
+                console.log(`Found ${todaySales.length} sales for today. Counter set to ${this.state.dailySaleCounter}.`);
+            }
             
-            const snapshot = await getCountFromServer(q);
-            const todayCount = snapshot.data().count;
+            // ใช้ตัวนับในเครื่อง แล้วบวกเพิ่ม
+            this.state.dailySaleCounter++;
+            const nextSequence = this.state.dailySaleCounter;
             
-            const nextSequence = todayCount + 1;
             return `${datePrefix}-${nextSequence.toString().padStart(4, '0')}`;
         },
 
@@ -1853,5 +1863,6 @@
 
 </body>
 </html>
+
 
 
